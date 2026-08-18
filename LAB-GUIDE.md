@@ -11,15 +11,34 @@ Everything below is a command you can run and a result you can look at.
 
 ## 1. What is pretending to be what
 
+**Containers** (`docker ps`):
+
 | In the lab | In real life |
 |---|---|
 | `sb-camera-01` — nginx with a self-signed cert | An Axis camera at a customer |
-| `sb_customer_lan` — an isolated Docker network | The customer's LAN |
 | `sb-wg-server` — WireGuard endpoint | The customer's firewall, or a box we place |
-| `sb_transit` — a Docker network | The public internet |
 | `sb-broker` — the console with the buttons | The same thing, on our server |
 | `sb-traefik` | The same thing, on our server |
-| `sb-<customer>-vpn` + `-browser` | Exactly the same, unchanged |
+| `sb-ak-*` — authentik, Postgres, Redis | The same thing, on our server |
+| `sb-<customer>-vpn` + `-resolver` + `-browser` | Exactly the same, unchanged |
+
+**Networks** (`docker network ls` — these are *not* containers, which is why they
+never appear in `docker ps`):
+
+| Network | Represents | Attached to |
+|---|---|---|
+| `sb_customer_lan` | The customer's private LAN (`internal=true`) | `sb-wg-server`, `sb-camera-01` — **never a session** |
+| `sb_transit` | The public internet between us and them | `sb-wg-server`, each session's `vpn` |
+| `sb_sessions` | Our own internal network | Traefik, broker, authentik, each session's `vpn` |
+
+Check it yourself:
+
+```bash
+docker network ls | grep sb_
+docker network inspect sb_customer_lan -f '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{println}}{{end}}'
+# → sb-wg-server 172.31.90.2/24
+# → sb-camera-01 172.31.90.10/24     ← and nothing else, ever
+```
 
 The session containers are **not** a simulation. What runs here is what would
 run in production.
