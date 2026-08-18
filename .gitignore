@@ -1,4 +1,11 @@
+# Local config
 .env
+
+# Generated WireGuard material — private keys, never tracked
 lab/wg-config/
+session/conf/
 session/vpn/wg0.conf
+
+# Runtime
+broker/audit.log
 *.log
