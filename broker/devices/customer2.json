@@ -1,0 +1,9 @@
+{
+  "customer": "customer2",
+  "domain": "acme.internal",
+  "devices": [
+    { "name": "camera-01", "ip": "172.31.90.10", "kind": "camera",   "model": "AXIS P1375", "location": "Loading bay" },
+    { "name": "camera-02", "ip": "172.31.90.11", "kind": "camera",   "model": "AXIS M3216", "location": "Main gate" },
+    { "name": "nvr",       "ip": "172.31.90.20", "kind": "recorder", "model": "Milestone",  "location": "Server room" }
+  ]
+}

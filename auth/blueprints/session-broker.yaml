@@ -1,0 +1,53 @@
+# Provisions the console as a protected application, so the lab needs no
+# click-through setup. Authentik applies blueprints from /blueprints/custom
+# automatically on start.
+version: 1
+metadata:
+  name: session-broker-console
+entries:
+  # A forward-auth provider: Authentik answers Traefik's "may this request
+  # through?" question rather than proxying the traffic itself.
+  - model: authentik_providers_proxy.proxyprovider
+    id: console-provider
+    identifiers:
+      name: session-broker-console
+    attrs:
+      name: session-broker-console
+      # forward_single: this provider protects exactly one hostname.
+      #
+      # forward_domain would cover the console AND every session host with one
+      # provider, but it needs a real registrable domain — authentik will not
+      # match a cookie domain of "localhost", and every request 404s. Under a
+      # real domain (sessions.ambos-security.com) switch to forward_domain and
+      # the session routers are covered too. See LAB-GUIDE.md §"Known gaps".
+      mode: forward_single
+      external_host: http://console.localhost:8088
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+
+  - model: authentik_core.application
+    id: console-app
+    identifiers:
+      slug: session-broker
+    attrs:
+      name: Session Broker
+      slug: session-broker
+      provider: !KeyOf console-provider
+      meta_description: Start and stop disposable customer support sessions.
+
+  # Attach it to the built-in outpost, which is what Traefik actually talks to.
+  - model: authentik_outposts.outpost
+    identifiers:
+      name: authentik Embedded Outpost
+    attrs:
+      providers:
+        - !KeyOf console-provider
+      config:
+        # Without these the outpost redirects to its own bind address
+        # (0.0.0.0:9000), which no browser can follow. They must be the URL a
+        # human types, not the address the container listens on.
+        authentik_host: http://auth.localhost:8088
+        authentik_host_browser: http://auth.localhost:8088
+        authentik_host_insecure: true
+        log_level: info
+        object_naming_template: ak-outpost-%(name)s

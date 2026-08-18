@@ -9,6 +9,7 @@ Runs entirely on your machine. Touches nothing belonging to the company.
 ```bash
 cp .env.example .env
 ./scripts/lab-up.sh
+./scripts/auth-up.sh          # login layer (first boot takes ~3 min)
 open http://console.localhost:8088/
 ```
 
@@ -30,6 +31,7 @@ start/stop/audit logic.
 | Session pair, tunnel, isolation | Working, verified |
 | Traefik routing per session | Working |
 | Broker console: list / connect / stop / audit | Working |
-| Auth in front of the broker | **Not built** — do before real credentials |
+| Authentik in front of the console | Working — login enforced, MFA available |
+| Auth on session URLs | **Not built** — needs a real domain, see LAB-GUIDE §4b |
 | Credentials from Infisical | **Not built** — lab uses files |
 | Idle reaper | **Not built** |

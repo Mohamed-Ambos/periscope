@@ -1,0 +1,7 @@
+{
+  "customer": "customer7",
+  "domain": "nordwerk.internal",
+  "devices": [
+    { "name": "camera-01", "ip": "172.31.90.10", "kind": "camera", "model": "AXIS P1375", "location": "Yard north" }
+  ]
+}

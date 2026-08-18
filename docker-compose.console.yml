@@ -41,6 +41,8 @@ services:
       - traefik.docker.network=sb_sessions
       - traefik.http.routers.broker.rule=Host(`console.${LAB_DOMAIN:-localhost}`)
       - traefik.http.routers.broker.entrypoints=web
+      # Every request to the console is checked by authentik first.
+      - traefik.http.routers.broker.middlewares=ak-auth@docker
       - traefik.http.services.broker.loadbalancer.server.port=8000
     networks: [sessions]
     restart: unless-stopped

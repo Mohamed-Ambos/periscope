@@ -9,3 +9,5 @@ session/vpn/wg0.conf
 # Runtime
 broker/audit.log
 *.log
+session/*.hosts
+session/*.resolv.conf

@@ -1,0 +1,110 @@
+# ---------------------------------------------------------------------------
+# Authentik — the login and MFA in front of the broker.
+#
+# Nothing reaches the console without passing through here. Traefik asks
+# Authentik about every request (forward auth); an unauthenticated one is
+# redirected to the login page instead of reaching the broker.
+# ---------------------------------------------------------------------------
+name: sb-auth
+
+services:
+  ak-db:
+    image: postgres:16-alpine
+    container_name: sb-ak-db
+    environment:
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${AK_DB_PASSWORD:?set AK_DB_PASSWORD in .env}
+      POSTGRES_DB: authentik
+    volumes:
+      - ak-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authentik"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [sessions]
+    restart: unless-stopped
+
+  ak-redis:
+    image: redis:7-alpine
+    container_name: sb-ak-redis
+    command: --save 60 1 --loglevel warning
+    volumes:
+      - ak-redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [sessions]
+    restart: unless-stopped
+
+  ak-server:
+    image: ghcr.io/goauthentik/server:2024.12
+    container_name: sb-ak-server
+    command: server
+    environment: &ak-env
+      AUTHENTIK_SECRET_KEY: ${AK_SECRET_KEY:?set AK_SECRET_KEY in .env}
+      AUTHENTIK_POSTGRESQL__HOST: ak-db
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AK_DB_PASSWORD}
+      AUTHENTIK_REDIS__HOST: ak-redis
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+      # Creates the first admin on a fresh database, so the lab needs no
+      # click-through setup. Change the password before this is real.
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AK_ADMIN_PASSWORD:?set AK_ADMIN_PASSWORD in .env}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AK_ADMIN_EMAIL:-admin@example.com}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AK_BOOTSTRAP_TOKEN:?set AK_BOOTSTRAP_TOKEN in .env}
+    volumes:
+      - ./auth/blueprints:/blueprints/custom:ro
+      - ak-media:/media
+    depends_on:
+      ak-db: {condition: service_healthy}
+      ak-redis: {condition: service_healthy}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=sb_sessions
+      # 1. The login UI itself.
+      - traefik.http.routers.ak.rule=Host(`auth.${LAB_DOMAIN:-localhost}`)
+      - traefik.http.routers.ak.entrypoints=web
+      - traefik.http.services.ak.loadbalancer.server.port=9000
+      # 2. The outpost endpoints, served under EVERY protected host. Without
+      #    this the redirect back from the login page has nowhere to land.
+      - traefik.http.routers.ak-outpost.rule=Host(`console.${LAB_DOMAIN:-localhost}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      - traefik.http.routers.ak-outpost.entrypoints=web
+      - traefik.http.routers.ak-outpost.service=ak
+      # 3. The middleware other routers attach to.
+      - traefik.http.middlewares.ak-auth.forwardauth.address=http://ak-server:9000/outpost.goauthentik.io/auth/traefik
+      - traefik.http.middlewares.ak-auth.forwardauth.trustForwardHeader=true
+      - traefik.http.middlewares.ak-auth.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid
+    networks: [sessions]
+    restart: unless-stopped
+
+  ak-worker:
+    image: ghcr.io/goauthentik/server:2024.12
+    container_name: sb-ak-worker
+    command: worker
+    environment: *ak-env
+    user: root
+    volumes:
+      - ./auth/blueprints:/blueprints/custom:ro
+      - ak-media:/media
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      ak-db: {condition: service_healthy}
+      ak-redis: {condition: service_healthy}
+    networks: [sessions]
+    restart: unless-stopped
+
+volumes:
+  ak-db:
+  ak-redis:
+  ak-media:
+
+networks:
+  sessions:
+    name: sb_sessions
+    external: true

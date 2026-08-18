@@ -27,7 +27,24 @@ services:
       - traefik.docker.network=sb_sessions
       - traefik.http.routers.${SESSION_ID}.rule=Host(`${SESSION_ID}.${LAB_DOMAIN:-localhost}`)
       - traefik.http.routers.${SESSION_ID}.entrypoints=web
+      # NOTE: no auth middleware here yet. forward_single covers one host
+      # (the console) and .localhost cannot use forward_domain. Under a real
+      # domain, add: middlewares=ak-auth@docker  — see LAB-GUIDE.md.
       - traefik.http.services.${SESSION_ID}.loadbalancer.server.port=3000
+    restart: "no"
+
+  # Answers the customer's device names inside this session only.
+  # Shares the vpn network stack, so it is reachable at 127.0.0.1 by the
+  # browser and disappears with the session.
+  resolver:
+    build: ../session/resolver
+    container_name: sb-${SESSION_ID}-resolver
+    network_mode: "service:vpn"
+    depends_on: [vpn]
+    environment:
+      SESSION_ID: ${SESSION_ID}
+    volumes:
+      - ${DEV_HOSTS}:/etc/devices.hosts:ro
     restart: "no"
 
   # What the engineer actually sees. No network of its own.
@@ -35,12 +52,17 @@ services:
     image: lscr.io/linuxserver/firefox:latest
     container_name: sb-${SESSION_ID}-browser
     network_mode: "service:vpn"     # ← the isolation guarantee, in one line
-    depends_on: [vpn]
+    depends_on: [vpn, resolver]
     environment:
       PUID: "1000"
       PGID: "1000"
       TZ: Europe/Berlin
     shm_size: "1gb"
+    volumes:
+      # Points the browser at the session's own resolver. Docker refuses the
+      # `dns:` option when a container shares another's namespace, so the
+      # resolver is supplied as a file instead.
+      - ${RESOLV_CONF}:/etc/resolv.conf:ro
     restart: "no"
 
 networks:
