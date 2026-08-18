@@ -49,16 +49,26 @@ run in production.
 
 ```bash
 cd ~/session-broker
-cp .env.example .env          # first time only
+cp .env.example .env             # first time only, then fill in the secrets
+./scripts/hosts-entries.sh       # prints one sudo command — run it
 ./scripts/lab-up.sh
+./scripts/auth-up.sh             # first boot migrates a database, ~3 min
 ```
+
+> **Why `sb.test` and not `localhost`?** Browsers resolve `*.localhost`
+> automatically, which is convenient — but they **reject a cookie scoped to
+> `localhost`**, because a single-label TLD is treated as a public suffix.
+> authentik's outpost needs exactly that cookie to track the login, so every
+> attempt died with *"invalid state"*. `sb.test` is registrable under the
+> unknown-TLD rule, the cookie is accepted, and the login completes. The cost
+> is one line in `/etc/hosts`.
 
 That starts Traefik, the broker, the fake customer network, and generates one
 WireGuard identity per customer. Takes a minute the first time.
 
 Now open the console:
 
-**<http://console.localhost:8088/>**
+**<http://console.sb.test:8088/>**
 
 You should see two customers, both stopped. Nothing is connected yet — that is
 the normal state of the whole system.
@@ -178,11 +188,11 @@ cat broker/audit.log
 The console is no longer open. Visiting it redirects you to a login page.
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: console.localhost:8088' http://127.0.0.1:8088/
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: console.sb.test:8088' http://127.0.0.1:8088/
 # → 302   (redirected to authentik)
 ```
 
-In a browser, go to **<http://console.localhost:8088/>**. You land on authentik.
+In a browser, go to **<http://console.sb.test:8088/>**. You land on authentik.
 Sign in with the admin account created on first boot:
 
 | | |
@@ -194,13 +204,13 @@ After logging in you are returned to the console. The session cookie lasts, so
 you only do this once per browser.
 
 **Add MFA** (this is the point of using authentik at all): log into
-<http://auth.localhost:8088/>, go to *Directory → Users → akadmin*, and enrol a
+<http://auth.sb.test:8088/>, go to *Directory → Users → akadmin*, and enrol a
 TOTP authenticator. Then log out and back in to see it enforced.
 
 ### Known gap: session URLs are not protected yet
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: customer2.localhost:8088' http://127.0.0.1:8088/
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: customer2.sb.test:8088' http://127.0.0.1:8088/
 # → 200   ← no login required
 ```
 
@@ -208,16 +218,11 @@ A live session's Firefox is reachable by anyone who can reach the host. **This
 must be fixed before anything real.** The cause is specific and worth knowing:
 
 - authentik's `forward_single` mode protects exactly **one** hostname — the console.
-- `forward_domain` mode would protect the console *and* every session host with a
-  single provider, but it needs a **real registrable domain**. It will not match
-  a cookie domain of `localhost`; every request 404s. I tried it, and that is
-  what happens.
-
-So under a real domain (`console.ambos-security.com`, `customer2.sessions.ambos-security.com`)
-the fix is two lines: switch the provider to `forward_domain` with the cookie
-domain set, and add `middlewares=ak-auth@docker` to the session router in
-`session/docker-compose.session.yml` — the label is already there, commented,
-with a note.
+- `forward_domain` would protect the console *and* every session host with one
+  provider. It was tried twice: first under `.localhost`, where it failed because
+  a cookie cannot be scoped to a single-label TLD; then under `sb.test`, where the
+  cookie domain is valid but the outpost still answers 404 for every host. That
+  second failure is **unresolved** — do not assume switching domains fixes it.
 
 The alternative, which is better in production, is for the broker to create a
 provider per session through authentik's API when it starts one. That also lets
@@ -301,7 +306,7 @@ hard maximum lifetime, because a forgotten session is a standing tunnel into a
 customer's network — the exact thing this design exists to prevent.
 
 **4. Real names and real certificates.**
-`console.localhost` becomes `console.ambos-security.com` with a proper
+`console.sb.test` becomes `console.ambos-security.com` with a proper
 certificate. Sessions can stay on internal names since only staff reach them.
 
 **5. The customer's VPN, not ours.**

@@ -25,11 +25,11 @@ services:
       # points at the port the browser is listening on inside this namespace.
       - traefik.enable=true
       - traefik.docker.network=sb_sessions
-      - traefik.http.routers.${SESSION_ID}.rule=Host(`${SESSION_ID}.${LAB_DOMAIN:-localhost}`)
+      - traefik.http.routers.${SESSION_ID}.rule=Host(`${SESSION_ID}.${LAB_DOMAIN:-sb.test}`)
       - traefik.http.routers.${SESSION_ID}.entrypoints=web
-      # NOTE: no auth middleware here yet. forward_single covers one host
-      # (the console) and .localhost cannot use forward_domain. Under a real
-      # domain, add: middlewares=ak-auth@docker  — see LAB-GUIDE.md.
+      # NOTE: no auth middleware. forward_single covers only the console;
+      # forward_domain would cover sessions too but returns 404 here. Until
+      # that is solved, session URLs are unauthenticated — see LAB-GUIDE.md.
       - traefik.http.services.${SESSION_ID}.loadbalancer.server.port=3000
     restart: "no"
 

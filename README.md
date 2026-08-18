@@ -8,9 +8,10 @@ Runs entirely on your machine. Touches nothing belonging to the company.
 
 ```bash
 cp .env.example .env
+./scripts/hosts-entries.sh   # prints the one sudo command you need
 ./scripts/lab-up.sh
 ./scripts/auth-up.sh          # login layer (first boot takes ~3 min)
-open http://console.localhost:8088/
+open http://console.sb.test:8088/
 ```
 
 **→ [docs/session-lab-walkthrough.html](docs/session-lab-walkthrough.html)** — illustrated: every container, what it represents in real life, and how the pieces connect.

@@ -29,7 +29,7 @@ services:
     container_name: sb-broker
     environment:
       PROJECT_DIR: /project
-      LAB_DOMAIN: ${LAB_DOMAIN:-localhost}
+      LAB_DOMAIN: ${LAB_DOMAIN:-sb.test}
       TRAEFIK_HTTP_PORT: ${TRAEFIK_HTTP_PORT:-8088}
     volumes:
       # The broker's power comes entirely from these two mounts. In production
@@ -39,7 +39,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=sb_sessions
-      - traefik.http.routers.broker.rule=Host(`console.${LAB_DOMAIN:-localhost}`)
+      - traefik.http.routers.broker.rule=Host(`console.${LAB_DOMAIN:-sb.test}`)
       - traefik.http.routers.broker.entrypoints=web
       # Every request to the console is checked by authentik first.
       - traefik.http.routers.broker.middlewares=ak-auth@docker

@@ -64,16 +64,21 @@ services:
     depends_on:
       ak-db: {condition: service_healthy}
       ak-redis: {condition: service_healthy}
+    extra_hosts:
+      # Lets the outpost resolve its own browser-facing URL from inside the
+      # container: out to the Docker host, back in through Traefik on :8088.
+      - "auth.${LAB_DOMAIN:-sb.test}:host-gateway"
     labels:
       - traefik.enable=true
       - traefik.docker.network=sb_sessions
       # 1. The login UI itself.
-      - traefik.http.routers.ak.rule=Host(`auth.${LAB_DOMAIN:-localhost}`)
+      - traefik.http.routers.ak.rule=Host(`auth.${LAB_DOMAIN:-sb.test}`)
       - traefik.http.routers.ak.entrypoints=web
       - traefik.http.services.ak.loadbalancer.server.port=9000
       # 2. The outpost endpoints, served under EVERY protected host. Without
       #    this the redirect back from the login page has nowhere to land.
-      - traefik.http.routers.ak-outpost.rule=Host(`console.${LAB_DOMAIN:-localhost}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      - traefik.http.routers.ak-outpost.rule=PathPrefix(`/outpost.goauthentik.io/`)
+      - traefik.http.routers.ak-outpost.priority=1000
       - traefik.http.routers.ak-outpost.entrypoints=web
       - traefik.http.routers.ak-outpost.service=ak
       # 3. The middleware other routers attach to.
@@ -88,6 +93,8 @@ services:
     container_name: sb-ak-worker
     command: worker
     environment: *ak-env
+    extra_hosts:
+      - "auth.${LAB_DOMAIN:-sb.test}:host-gateway"
     user: root
     volumes:
       - ./auth/blueprints:/blueprints/custom:ro
