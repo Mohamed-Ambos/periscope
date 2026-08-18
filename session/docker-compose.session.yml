@@ -1,0 +1,52 @@
+# ---------------------------------------------------------------------------
+# ONE SESSION = TWO CONTAINERS, created and destroyed together.
+#
+# Rendered per customer by scripts/session-up.sh. SESSION_ID keeps the compose
+# project, container names and Traefik router unique per customer.
+# ---------------------------------------------------------------------------
+name: sb-session-${SESSION_ID}
+
+services:
+  # Owns the only network stack in the session.
+  vpn:
+    build: ../session/vpn
+    container_name: sb-${SESSION_ID}-vpn
+    cap_add: [NET_ADMIN]
+    sysctls:
+      net.ipv4.conf.all.src_valid_mark: "1"
+    volumes:
+      - ${WG_CONF}:/etc/wireguard/wg0.conf:ro
+    networks: [sessions, transit]
+    labels:
+      # NOTE: the Traefik labels live HERE, not on the browser.
+      # The browser has no network stack of its own (network_mode below), so
+      # Docker gives it no IP and Traefik cannot route to it. The netns owner
+      # is the routable container, so it carries the routing labels and simply
+      # points at the port the browser is listening on inside this namespace.
+      - traefik.enable=true
+      - traefik.docker.network=sb_sessions
+      - traefik.http.routers.${SESSION_ID}.rule=Host(`${SESSION_ID}.${LAB_DOMAIN:-localhost}`)
+      - traefik.http.routers.${SESSION_ID}.entrypoints=web
+      - traefik.http.services.${SESSION_ID}.loadbalancer.server.port=3000
+    restart: "no"
+
+  # What the engineer actually sees. No network of its own.
+  browser:
+    image: lscr.io/linuxserver/firefox:latest
+    container_name: sb-${SESSION_ID}-browser
+    network_mode: "service:vpn"     # ← the isolation guarantee, in one line
+    depends_on: [vpn]
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Berlin
+    shm_size: "1gb"
+    restart: "no"
+
+networks:
+  sessions:
+    name: sb_sessions
+    external: true
+  transit:
+    name: sb_transit
+    external: true

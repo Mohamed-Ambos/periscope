@@ -1,0 +1,35 @@
+# session-broker
+
+A working lab for **on-demand support sessions**: a customer calls, an engineer
+clicks one button, a disposable container dials into that customer's network and
+hands over a browser, and everything is destroyed when the call ends.
+
+Runs entirely on your machine. Touches nothing belonging to the company.
+
+```bash
+cp .env.example .env
+./scripts/lab-up.sh
+open http://console.localhost:8088/
+```
+
+**→ Read [LAB-GUIDE.md](LAB-GUIDE.md)** — what to click, what to check with your
+own eyes, and what has to change before a real customer.
+
+## What is real and what is pretend
+
+Pretend: the camera, the customer LAN, their VPN endpoint, the internet between us.
+
+Real, and unchanged in production: the session pair (`vpn` + `browser`), the
+`network_mode: service:vpn` isolation, the Traefik routing, the broker's
+start/stop/audit logic.
+
+## Status
+
+| Piece | State |
+|---|---|
+| Session pair, tunnel, isolation | Working, verified |
+| Traefik routing per session | Working |
+| Broker console: list / connect / stop / audit | Working |
+| Auth in front of the broker | **Not built** — do before real credentials |
+| Credentials from Infisical | **Not built** — lab uses files |
+| Idle reaper | **Not built** |

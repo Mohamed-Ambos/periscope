@@ -1,0 +1,4 @@
+.env
+lab/wg-config/
+session/vpn/wg0.conf
+*.log

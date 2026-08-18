@@ -1,0 +1,62 @@
+# ---------------------------------------------------------------------------
+# The lab: everything that is NOT ours in real life.
+#
+#   customer_lan  — the customer's private network. Internal: no route to the
+#                   host or the internet, so reaching the camera from a session
+#                   proves the tunnel works rather than the host routing did.
+#   transit       — stands in for the public internet between us and them.
+# ---------------------------------------------------------------------------
+name: sb-lab
+
+services:
+  # The customer's VPN endpoint. In production this is their firewall, or a
+  # small box we place. Here it is the thing our session dials into.
+  wg-server:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: sb-wg-server
+    cap_add: [NET_ADMIN, SYS_MODULE]
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv4.conf.all.src_valid_mark: "1"
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Berlin
+      SERVERURL: sb-wg-server        # reachable by name on the transit network
+      SERVERPORT: "51820"
+      # One named peer per customer. Sharing a single peer identity across
+      # sessions silently breaks the second one: the server tracks one endpoint
+      # per public key, so the newer handshake steals the older session's tunnel.
+      PEERS: "customer2,customer7"
+      PEERDNS: "172.31.90.1"
+      INTERNAL_SUBNET: "10.13.13.0"
+      ALLOWEDIPS: "${CUSTOMER_LAN_SUBNET:-172.31.90.0/24}"
+    volumes:
+      - ./lab/wg-config:/config
+    networks:
+      transit:
+      customer_lan:
+        ipv4_address: 172.31.90.2
+    restart: unless-stopped
+
+  # A camera on the customer LAN. Nothing else can reach it.
+  camera-01:
+    build: ./lab/camera
+    container_name: sb-camera-01
+    environment:
+      CAMERA_NAME: camera-01
+      CAMERA_SERIAL: ACCC8E1234AB
+    networks:
+      customer_lan:
+        ipv4_address: ${CAMERA_IP:-172.31.90.10}
+    restart: unless-stopped
+
+networks:
+  transit:
+    name: sb_transit
+  customer_lan:
+    name: sb_customer_lan
+    internal: true          # ← the whole point: no way in except the tunnel
+    ipam:
+      config:
+        - subnet: ${CUSTOMER_LAN_SUBNET:-172.31.90.0/24}

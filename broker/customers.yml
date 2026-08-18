@@ -1,0 +1,13 @@
+# The customer register. In production the credential reference points at
+# Infisical rather than a file path.
+customers:
+  - id: customer2
+    name: ACME GmbH — Hauptlager
+    site: Munich
+    vpn: wireguard
+    devices: 12
+  - id: customer7
+    name: Nordwerk Logistik
+    site: Hamburg
+    vpn: wireguard
+    devices: 40
