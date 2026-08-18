@@ -142,6 +142,14 @@ internal-only name breaks the browser; a name the container cannot resolve
 gives HTTP 400. The fix here is one browser-facing URL plus an `extra_hosts`
 entry mapping it to `host-gateway`.
 
+**Bind-mount paths are resolved by the Docker daemon, on the host.** The broker
+runs in a container where the project is at `/project`, but it starts sessions
+through the Docker socket — so passing `$(pwd)` mounted a path that exists only
+inside the broker. The session came up with empty files: the resolver exited
+with *"no device file mounted"*, the browser never started because it depends on
+it, and Traefik answered **502**. Hence `HOST_PROJECT_DIR` in `.env`. Anything
+mounted into a session must use a host path, not a broker path.
+
 **A running session does not pick up changed compose definitions.** Recreate it.
 A session alive for days is its own smell — that is what the (unbuilt) reaper is
 for.

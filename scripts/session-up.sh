@@ -8,6 +8,11 @@ cd "$(dirname "$0")/.."
 [ -f .env ] && . ./.env
 
 SESSION_ID="${1:?usage: session-up.sh <customer-id>}"
+
+# Bind-mount sources are resolved by the Docker daemon on the HOST. When the
+# broker calls this script it runs inside a container where the project is at
+# /project — passing that path would mount something that does not exist.
+HOST_DIR="${HOST_PROJECT_DIR:-$(pwd)}"
 SRC_CONF="lab/wg-config/peer_${SESSION_ID}/peer_${SESSION_ID}.conf"
 [ -f "$SRC_CONF" ] || { echo "✗ no peer config for '${SESSION_ID}' — add it to PEERS in docker-compose.lab.yml, then: docker compose -f docker-compose.lab.yml up -d --force-recreate wg-server" >&2; exit 1; }
 
@@ -39,9 +44,9 @@ printf 'nameserver 127.0.0.1\noptions ndots:1\n' > "$RESOLV_FILE"
 
 echo "▶ starting session '${SESSION_ID}'"
 SESSION_ID="$SESSION_ID" \
-WG_CONF="$(pwd)/${CONF}" \
-DEV_HOSTS="$(pwd)/${HOSTS_FILE}" \
-RESOLV_CONF="$(pwd)/${RESOLV_FILE}" \
+WG_CONF="${HOST_DIR}/${CONF}" \
+DEV_HOSTS="${HOST_DIR}/${HOSTS_FILE}" \
+RESOLV_CONF="${HOST_DIR}/${RESOLV_FILE}" \
 LAB_DOMAIN="${LAB_DOMAIN:-localhost}" \
 docker compose -f session/docker-compose.session.yml -p "sb-session-${SESSION_ID}" up -d --build
 

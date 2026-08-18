@@ -29,6 +29,7 @@ services:
     container_name: sb-broker
     environment:
       PROJECT_DIR: /project
+      HOST_PROJECT_DIR: ${HOST_PROJECT_DIR:?set HOST_PROJECT_DIR in .env}
       LAB_DOMAIN: ${LAB_DOMAIN:-sb.test}
       TRAEFIK_HTTP_PORT: ${TRAEFIK_HTTP_PORT:-8088}
     volumes:
