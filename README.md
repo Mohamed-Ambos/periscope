@@ -13,6 +13,8 @@ cp .env.example .env
 open http://console.localhost:8088/
 ```
 
+**→ [docs/session-lab-walkthrough.html](docs/session-lab-walkthrough.html)** — illustrated: every container, what it represents in real life, and how the pieces connect.
+
 **→ Read [LAB-GUIDE.md](LAB-GUIDE.md)** — what to click, what to check with your
 own eyes, and what has to change before a real customer.
 
@@ -34,4 +36,5 @@ start/stop/audit logic.
 | Authentik in front of the console | Working — login enforced, MFA available |
 | Auth on session URLs | **Not built** — needs a real domain, see LAB-GUIDE §4b |
 | Credentials from Infisical | **Not built** — lab uses files |
+| Device names via per-customer JSON registry | Working — no hosts files anywhere |
 | Idle reaper | **Not built** |

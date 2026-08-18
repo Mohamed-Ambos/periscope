@@ -1,0 +1,459 @@
+<title>Session Broker Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Sans+3:wght@400;600&display=swap">
+
+<style>
+  :root {
+    --ground: #F4F6F8; --surface: #FFFFFF; --surface-2: #E9EDF1;
+    --ink: #131A21; --ink-soft: #35434F; --muted: #5C6B7A;
+    --rule: #D3DAE1; --rule-soft: #E4E9ED;
+    --accent: #175E8C; --accent-soft: #E1EDF5;
+    --live: #1B8A4B; --live-soft: #E3F2E9;
+    --warn: #A85B1B; --warn-soft: #F8EDE3;
+    --code-bg: #0E161C; --code-ink: #D8E3EB;
+    --shadow: 0 1px 2px rgba(19,26,33,.06), 0 10px 28px rgba(19,26,33,.06);
+    --f-head: "Archivo", ui-sans-serif, system-ui, sans-serif;
+    --f-body: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0B1116; --surface: #121C23; --surface-2: #1A252D;
+      --ink: #E4EBF1; --ink-soft: #BCC8D2; --muted: #8496A4;
+      --rule: #27353F; --rule-soft: #1F2C34;
+      --accent: #52A8D8; --accent-soft: #102E42;
+      --live: #4CBB80; --live-soft: #102C1D;
+      --warn: #D08A4C; --warn-soft: #2C1D0F;
+      --code-bg: #070D12; --code-ink: #CFDBE4;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0B1116; --surface: #121C23; --surface-2: #1A252D;
+    --ink: #E4EBF1; --ink-soft: #BCC8D2; --muted: #8496A4;
+    --rule: #27353F; --rule-soft: #1F2C34;
+    --accent: #52A8D8; --accent-soft: #102E42;
+    --live: #4CBB80; --live-soft: #102C1D;
+    --warn: #D08A4C; --warn-soft: #2C1D0F;
+    --code-bg: #070D12; --code-ink: #CFDBE4;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.28);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--f-body);
+         font-size:17.5px; line-height:1.62; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1060px; margin:0 auto; padding:0 26px 90px; }
+  .col { max-width:68ch; }
+  header.masthead { padding:68px 0 36px; border-bottom:2px solid var(--ink); margin-bottom:44px; }
+  .eyebrow { font-family:var(--f-mono); font-size:11.5px; font-weight:500; letter-spacing:.16em;
+             text-transform:uppercase; color:var(--accent); margin:0 0 16px; }
+  h1 { font-family:var(--f-head); font-size:clamp(33px,5vw,52px); line-height:1.02;
+       letter-spacing:-.028em; font-weight:700; margin:0 0 18px; text-wrap:balance; }
+  .standfirst { font-size:20px; line-height:1.5; color:var(--ink-soft); margin:0; max-width:58ch; }
+  section { margin:0 0 60px; }
+  h2 { font-family:var(--f-head); font-size:26px; line-height:1.18; letter-spacing:-.02em;
+       font-weight:600; margin:0 0 10px; text-wrap:balance; }
+  h3 { font-family:var(--f-head); font-size:18.5px; line-height:1.28; font-weight:600;
+       letter-spacing:-.01em; margin:28px 0 8px; }
+  .sec-head { display:flex; align-items:baseline; gap:14px; border-top:1px solid var(--rule);
+              padding-top:13px; margin-bottom:20px; }
+  .sec-head .eyebrow { margin:0; flex:none; }
+  p { margin:0 0 17px; } p.lead { font-size:19px; color:var(--ink-soft); }
+  code { font-family:var(--f-mono); font-size:.84em; background:var(--surface-2);
+         border:1px solid var(--rule-soft); border-radius:4px; padding:.1em .36em; word-break:break-word; }
+  pre { background:var(--code-bg); color:var(--code-ink); border:1px solid var(--rule);
+        border-radius:8px; padding:17px 19px; overflow-x:auto; font-family:var(--f-mono);
+        font-size:13px; line-height:1.62; margin:16px 0; }
+  pre code { background:none; border:none; padding:0; font-size:inherit; color:inherit; }
+  pre .c { color:#708694; } pre .k { color:#6FBEE0; } pre .s { color:#A9CE86; } pre .g { color:#7FD6A0; }
+  a { color:var(--accent); text-underline-offset:3px; }
+  a:focus-visible, summary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:3px; }
+  ul, ol { margin:0 0 17px; padding-left:21px; } li { margin-bottom:8px; } li::marker { color:var(--muted); }
+  figure { margin:32px 0; background:var(--surface); border:1px solid var(--rule); border-radius:10px;
+           padding:24px 24px 16px; box-shadow:var(--shadow); overflow-x:auto; }
+  figure svg { display:block; width:100%; max-width:100%; height:auto; min-width:640px; color:var(--ink); }
+  figcaption { font-size:14.5px; line-height:1.5; color:var(--muted); margin-top:15px;
+               padding-top:13px; border-top:1px solid var(--rule-soft); max-width:74ch; }
+  .svg-label { font-family:var(--f-mono); font-size:12px; font-weight:500; fill:currentColor; }
+  .svg-title { font-family:var(--f-head); font-size:13.5px; font-weight:600; fill:currentColor; }
+  .svg-note  { font-family:var(--f-mono); font-size:10.5px; fill:var(--muted); }
+  .svg-mono  { font-family:var(--f-mono); font-size:11.5px; fill:currentColor; }
+  .svg-eyebrow { font-family:var(--f-mono); font-size:10.5px; font-weight:700; letter-spacing:.12em; fill:var(--muted); }
+  .box { fill:var(--surface-2); stroke:var(--rule); stroke-width:1.5; }
+  .box-accent { fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.75; }
+  .box-live { fill:var(--live-soft); stroke:var(--live); stroke-width:1.75; }
+  /* grouping frames: same look, but they contain components rather than being one */
+  .grp-live { fill:var(--live-soft); stroke:var(--live); stroke-width:1.75; }
+  .box-warn { fill:var(--warn-soft); stroke:var(--warn); stroke-width:1.5; }
+  .flow { stroke:currentColor; stroke-width:1.7; fill:none; }
+  .flow-accent { stroke:var(--accent); stroke-width:2; fill:none; }
+  .flow-live { stroke:var(--live); stroke-width:2; fill:none; }
+  .t-accent { fill:var(--accent); } .t-live { fill:var(--live); } .t-warn { fill:var(--warn); }
+  .callout { border-left:3px solid var(--accent); background:var(--surface); border-radius:0 8px 8px 0;
+             padding:17px 21px; margin:25px 0; }
+  .callout.warn { border-left-color:var(--warn); } .callout.good { border-left-color:var(--live); }
+  .callout p:last-child { margin-bottom:0; }
+  .callout .tag { font-family:var(--f-mono); font-size:11px; font-weight:700; letter-spacing:.12em;
+                  text-transform:uppercase; color:var(--accent); display:block; margin-bottom:6px; }
+  .callout.warn .tag { color:var(--warn); } .callout.good .tag { color:var(--live); }
+  .table-scroll { overflow-x:auto; margin:25px 0; }
+  table { width:100%; border-collapse:collapse; font-size:15px; min-width:620px; }
+  th, td { text-align:left; padding:11px 13px; border-bottom:1px solid var(--rule-soft); vertical-align:top; }
+  thead th { font-family:var(--f-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+             color:var(--muted); font-weight:700; border-bottom:1px solid var(--rule); }
+  td.name { font-family:var(--f-mono); font-size:13px; white-space:nowrap; }
+  .grp { font-family:var(--f-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+         color:var(--muted); font-weight:700; background:var(--surface-2); }
+  .pill { font-family:var(--f-mono); font-size:11px; padding:2px 7px; border-radius:20px;
+          border:1px solid currentColor; white-space:nowrap; }
+  .pill.ok { color:var(--live); } .pill.no { color:var(--warn); }
+  details { border:1px solid var(--rule); border-radius:8px; padding:13px 17px; margin:13px 0; background:var(--surface); }
+  summary { cursor:pointer; font-weight:600; font-size:16px; font-family:var(--f-head); }
+  details[open] summary { margin-bottom:9px; }
+  footer.end { border-top:1px solid var(--rule); padding-top:22px; color:var(--muted); font-size:14.5px; }
+  @media (max-width:640px) { body{font-size:16.5px} .wrap{padding:0 17px 60px} pre{font-size:12px} }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Built and running &middot; 18 August 2026</p>
+  <h1>Session Broker Lab</h1>
+  <p class="standfirst">Thirteen containers on one laptop. Six are ours, two pretend to be a customer, and three appear only while an engineer is working. Here is what each one is, and what it stands for in real life.</p>
+</header>
+
+<section>
+  <div class="col">
+    <p class="lead">This is not a proposal any more. It runs, and every claim below was checked against the running system rather than reasoned about.</p>
+    <p>Repository: <code>github.com/Mohamed-Ambos/session-broker</code> &mdash; nothing from the company was touched.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><p class="eyebrow">01 &middot; The containers</p></div>
+  <div class="col">
+    <h2>Every container, and what it stands for</h2>
+    <p>These are the real names, exactly as <code>docker ps</code> prints them.</p>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Container</th><th>What it is</th><th>What it represents in real life</th></tr></thead>
+      <tbody>
+        <tr><td colspan="3" class="grp">Our server &mdash; always on</td></tr>
+        <tr><td class="name">sb-traefik</td><td>Traefik v3.3</td><td>The front door. Every request from an engineer arrives here and is routed by hostname. Identical in production.</td></tr>
+        <tr><td class="name">sb-broker</td><td>The console &mdash; FastAPI + Docker CLI</td><td>The page with the customer list and the Connect button. Starts and destroys sessions, and writes the audit log.</td></tr>
+        <tr><td class="name">sb-ak-server</td><td>authentik</td><td>Login and MFA. Traefik asks it about every request to the console before letting it through.</td></tr>
+        <tr><td class="name">sb-ak-worker</td><td>authentik background worker</td><td>Applies configuration and runs scheduled work. Same in production.</td></tr>
+        <tr><td class="name">sb-ak-db</td><td>PostgreSQL 16</td><td>authentik's database &mdash; users, groups, applications.</td></tr>
+        <tr><td class="name">sb-ak-redis</td><td>Redis 7</td><td>authentik's cache and task queue.</td></tr>
+
+        <tr><td colspan="3" class="grp">The pretend customer &mdash; the only simulated part</td></tr>
+        <tr><td class="name">sb-wg-server</td><td>WireGuard endpoint</td><td>The customer's firewall, or a small box we place at their site. In production this is <strong>theirs</strong>, not ours.</td></tr>
+        <tr><td class="name">sb-camera-01</td><td>nginx with a self-signed certificate</td><td>An Axis camera. Self-signed on purpose &mdash; that is what a real camera serves.</td></tr>
+
+        <tr><td colspan="3" class="grp">One session &mdash; exists only while someone is working</td></tr>
+        <tr><td class="name">sb-customer2-vpn</td><td>WireGuard client</td><td>The tunnel into that one customer. Owns the only network stack in the session. Unchanged in production.</td></tr>
+        <tr><td class="name">sb-customer2-resolver</td><td>dnsmasq</td><td>Answers that customer's device names &mdash; so nobody edits a hosts file, ever. Unchanged in production.</td></tr>
+        <tr><td class="name">sb-customer2-browser</td><td>Firefox over KasmVNC</td><td>What the engineer actually looks at. Unchanged in production.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col">
+    <p>A second engineer working a second customer adds three more &mdash; <code>sb-customer7-vpn</code>, <code>-resolver</code>, <code>-browser</code> &mdash; on their own network, with their own tunnel and their own credentials.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><p class="eyebrow">02 &middot; How they connect</p></div>
+  <div class="col">
+    <h2>The whole system on one page</h2>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 900 470" role="img" aria-label="System layout: an engineer authenticates through Traefik and authentik to reach the broker console, which starts a three-container session that tunnels to the simulated customer network and reaches the camera.">
+      <defs>
+        <marker id="w1-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker>
+        <marker id="w1-ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+        <marker id="w1-ar-l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--live)"/></marker>
+      </defs>
+
+      <text x="16" y="22" class="svg-eyebrow">OUR SERVER</text>
+      <rect x="16" y="32" width="452" height="286" rx="10" fill="none" stroke="var(--rule)" stroke-dasharray="4 4"/>
+
+      <rect x="36" y="52" width="150" height="56" rx="7" class="box"/>
+      <text x="111" y="76" class="svg-title" text-anchor="middle">sb-traefik</text>
+      <text x="111" y="94" class="svg-note" text-anchor="middle">routes by hostname</text>
+
+      <rect x="222" y="52" width="150" height="56" rx="7" class="box-accent"/>
+      <text x="297" y="76" class="svg-title" text-anchor="middle">sb-ak-server</text>
+      <text x="297" y="94" class="svg-note" text-anchor="middle">login + MFA</text>
+
+      <rect x="252" y="126" width="86" height="40" rx="6" class="box"/>
+      <text x="295" y="151" class="svg-note" text-anchor="middle">sb-ak-db</text>
+      <rect x="348" y="126" width="98" height="40" rx="6" class="box"/>
+      <text x="397" y="151" class="svg-note" text-anchor="middle">sb-ak-redis</text>
+      <rect x="222" y="180" width="150" height="38" rx="6" class="box"/>
+      <text x="297" y="204" class="svg-note" text-anchor="middle">sb-ak-worker</text>
+
+      <rect x="36" y="180" width="150" height="56" rx="7" class="box-accent"/>
+      <text x="111" y="204" class="svg-title" text-anchor="middle">sb-broker</text>
+      <text x="111" y="222" class="svg-note" text-anchor="middle">the console</text>
+
+      <path d="M 111 114 L 111 174" class="flow-accent" marker-end="url(#w1-ar-a)"/>
+      <text x="124" y="150" class="svg-label t-accent">2 &mdash; allowed</text>
+      <path d="M 194 74 L 214 74" class="flow" marker-end="url(#w1-ar)"/>
+      <text x="204" y="44" class="svg-label" text-anchor="middle">1 &mdash; may this through?</text>
+
+      <text x="16" y="344" class="svg-eyebrow">ONE SESSION &mdash; STARTED BY THE BROKER, DESTROYED WITH IT</text>
+      <rect x="16" y="354" width="452" height="100" rx="10" class="grp-live" fill-opacity=".35"/>
+      <rect x="36" y="374" width="128" height="60" rx="6" class="box"/>
+      <text x="100" y="398" class="svg-note" text-anchor="middle">sb-customer2-</text>
+      <text x="100" y="414" class="svg-title" text-anchor="middle">browser</text>
+      <rect x="176" y="374" width="128" height="60" rx="6" class="box"/>
+      <text x="240" y="398" class="svg-note" text-anchor="middle">sb-customer2-</text>
+      <text x="240" y="414" class="svg-title" text-anchor="middle">resolver</text>
+      <rect x="316" y="374" width="132" height="60" rx="6" class="box-live"/>
+      <text x="382" y="398" class="svg-note" text-anchor="middle">sb-customer2-</text>
+      <text x="382" y="414" class="svg-title" text-anchor="middle">vpn</text>
+
+      <path d="M 111 242 L 111 348" class="flow-accent" marker-end="url(#w1-ar-a)"/>
+      <text x="124" y="300" class="svg-label t-accent">3 &mdash; Connect</text>
+
+      <text x="600" y="22" class="svg-eyebrow">THE CUSTOMER</text>
+      <rect x="600" y="32" width="284" height="180" rx="10" fill="none" stroke="var(--rule)" stroke-dasharray="4 4"/>
+      <rect x="626" y="60" width="232" height="56" rx="7" class="box"/>
+      <text x="742" y="84" class="svg-title" text-anchor="middle">sb-wg-server</text>
+      <text x="742" y="102" class="svg-note" text-anchor="middle">their firewall / our box</text>
+      <rect x="626" y="140" width="232" height="52" rx="7" class="box-warn"/>
+      <text x="742" y="163" class="svg-title" text-anchor="middle">sb-camera-01</text>
+      <text x="742" y="180" class="svg-note" text-anchor="middle">static IP, self-signed cert</text>
+      <path d="M 742 122 L 742 134" class="flow" marker-end="url(#w1-ar)"/>
+
+      <path d="M 456 396 L 540 396 L 540 88 L 618 88" class="flow-live" marker-end="url(#w1-ar-l)"/>
+      <text x="548" y="250" class="svg-label t-live">4 &mdash; tunnel</text>
+
+      <rect x="520" y="354" width="364" height="100" rx="8" fill="none" stroke="var(--rule)"/>
+      <text x="540" y="380" class="svg-label">The engineer's laptop holds nothing.</text>
+      <text x="540" y="402" class="svg-note">No VPN client, no credentials, no hosts file, no root CA.</text>
+      <text x="540" y="424" class="svg-note">A browser tab is the entire client.</text>
+    </svg>
+    <figcaption>Steps 1&ndash;2 happen before the console is even reachable. Step 4 is the only path to the customer, and it exists only between Connect and Stop.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head"><p class="eyebrow">03 &middot; Inside a session</p></div>
+  <div class="col">
+    <h2>Three containers, one network stack</h2>
+    <p>This is the part worth understanding properly, because the isolation depends on it.</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 900 380" role="img" aria-label="Inside a session: the browser and resolver both share the VPN container's network namespace, so neither has an address of its own and both lose all connectivity if the tunnel drops.">
+      <defs>
+        <marker id="w2-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker>
+        <marker id="w2-ar-l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--live)"/></marker>
+      </defs>
+
+      <text x="16" y="22" class="svg-eyebrow">ONE SHARED NETWORK NAMESPACE &mdash; OWNED BY THE VPN CONTAINER</text>
+      <rect x="16" y="34" width="600" height="252" rx="10" class="grp-live" fill-opacity=".22"/>
+
+      <rect x="44" y="66" width="168" height="92" rx="7" class="box"/>
+      <text x="128" y="92" class="svg-title" text-anchor="middle">browser</text>
+      <text x="128" y="112" class="svg-note" text-anchor="middle">Firefox + KasmVNC</text>
+      <text x="128" y="132" class="svg-note" text-anchor="middle">no IP of its own</text>
+      <text x="128" y="150" class="svg-note" text-anchor="middle">DNS &rarr; 127.0.0.1</text>
+
+      <rect x="240" y="66" width="168" height="92" rx="7" class="box"/>
+      <text x="324" y="92" class="svg-title" text-anchor="middle">resolver</text>
+      <text x="324" y="112" class="svg-note" text-anchor="middle">dnsmasq on 127.0.0.1</text>
+      <text x="324" y="132" class="svg-note" text-anchor="middle">no IP of its own</text>
+      <text x="324" y="150" class="svg-note" text-anchor="middle">this customer's names</text>
+
+      <rect x="436" y="66" width="156" height="92" rx="7" class="box-live"/>
+      <text x="514" y="92" class="svg-title" text-anchor="middle">vpn</text>
+      <text x="514" y="112" class="svg-note" text-anchor="middle">wg0 + routes</text>
+      <text x="514" y="132" class="svg-note" text-anchor="middle">owns the stack</text>
+      <text x="514" y="150" class="svg-note" text-anchor="middle">holds the credentials</text>
+
+      <text x="44" y="196" class="svg-mono">network_mode: service:vpn</text>
+      <text x="44" y="218" class="svg-note">The browser and the resolver borrow the vpn container's network. Docker gives</text>
+      <text x="44" y="236" class="svg-note">them no address, so neither can route anywhere the tunnel does not go.</text>
+      <text x="44" y="266" class="svg-note t-live">Only one route leaves: 172.31.90.0/24 dev wg0 — this customer, nothing else.</text>
+
+      <rect x="660" y="66" width="220" height="92" rx="7" class="box-warn"/>
+      <text x="770" y="96" class="svg-title" text-anchor="middle">camera-01.acme.internal</text>
+      <text x="770" y="118" class="svg-note" text-anchor="middle">172.31.90.10</text>
+      <text x="770" y="140" class="svg-note" text-anchor="middle">on the customer LAN</text>
+
+      <path d="M 600 112 L 652 112" class="flow-live" marker-end="url(#w2-ar-l)"/>
+
+      <rect x="16" y="308" width="864" height="58" rx="8" fill="none" stroke="var(--rule)"/>
+      <text x="38" y="332" class="svg-label">Verified: drop the tunnel and the camera disappears for all three containers.</text>
+      <text x="38" y="354" class="svg-note">docker exec …-vpn wg-quick down wg0  →  the browser's tab fails too, because it shares this stack.</text>
+    </svg>
+    <figcaption>The browser and the resolver are both passengers. The VPN container is the only thing with a network, which is why &ldquo;can this session reach that customer&rdquo; has exactly one answer and one place to check it.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head"><p class="eyebrow">04 &middot; No more hosts files</p></div>
+  <div class="col">
+    <h2>A JSON file per customer, and a resolver per session</h2>
+    <p>Cameras have static IPs, so the mapping from name to address is just data. Keeping that data in one file per customer &mdash; instead of in a hosts file on every laptop &mdash; is the whole fix.</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 900 330" role="img" aria-label="The per-customer JSON device registry is rendered into a hosts file at session start, served by dnsmasq inside the session, so the engineer types device names instead of IP addresses.">
+      <defs>
+        <marker id="w3-ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+      </defs>
+
+      <rect x="16" y="52" width="228" height="140" rx="8" class="box"/>
+      <text x="130" y="80" class="svg-title" text-anchor="middle">device registry</text>
+      <text x="130" y="100" class="svg-note" text-anchor="middle">broker/devices/</text>
+      <text x="130" y="117" class="svg-note" text-anchor="middle">customer2.json</text>
+      <line x1="38" y1="130" x2="222" y2="130" stroke="var(--rule)"/>
+      <text x="38" y="152" class="svg-mono">camera-01 → .10</text>
+      <text x="38" y="172" class="svg-mono">camera-02 → .11</text>
+
+      <path d="M 252 122 L 322 122" class="flow-accent" marker-end="url(#w3-ar-a)"/>
+      <text x="287" y="110" class="svg-label t-accent" text-anchor="middle">at start</text>
+
+      <rect x="330" y="52" width="228" height="140" rx="8" class="box-accent"/>
+      <text x="444" y="80" class="svg-title" text-anchor="middle">resolver</text>
+      <text x="444" y="100" class="svg-note" text-anchor="middle">dnsmasq, in the session</text>
+      <text x="444" y="117" class="svg-note" text-anchor="middle">127.0.0.1 : 53</text>
+      <line x1="352" y1="130" x2="536" y2="130" stroke="var(--accent)" opacity=".4"/>
+      <text x="352" y="152" class="svg-note">known name → the device</text>
+      <text x="352" y="172" class="svg-note">anything else → normal DNS</text>
+
+      <path d="M 566 122 L 636 122" class="flow-accent" marker-end="url(#w3-ar-a)"/>
+
+      <rect x="644" y="52" width="240" height="140" rx="8" class="box"/>
+      <text x="764" y="80" class="svg-title" text-anchor="middle">the engineer types</text>
+      <line x1="666" y1="94" x2="862" y2="94" stroke="var(--rule)"/>
+      <text x="666" y="120" class="svg-mono">camera-01.acme.internal</text>
+      <text x="666" y="146" class="svg-note">not 172.31.90.10</text>
+      <text x="666" y="172" class="svg-note">and not in any hosts file</text>
+
+      <rect x="16" y="228" width="868" height="86" rx="8" fill="none" stroke="var(--live)"/>
+      <text x="38" y="254" class="svg-label t-live">Why this beats a hosts file</text>
+      <text x="38" y="276" class="svg-note">One file per customer, in git, reviewed like code. Adding a camera is a JSON line, not a visit to every laptop.</text>
+      <text x="38" y="296" class="svg-note">The names exist only inside that session — no leakage between customers, nothing left behind afterwards.</text>
+    </svg>
+    <figcaption>Adding a device is one line of JSON. The next session started for that customer resolves it; no other machine on earth needs to know.</figcaption>
+  </figure>
+
+  <pre><code><span class="c">// broker/devices/customer2.json</span>
+{
+  <span class="k">"customer"</span>: <span class="s">"customer2"</span>,
+  <span class="k">"domain"</span>:   <span class="s">"acme.internal"</span>,
+  <span class="k">"devices"</span>: [
+    { <span class="k">"name"</span>: <span class="s">"camera-01"</span>, <span class="k">"ip"</span>: <span class="s">"172.31.90.10"</span>, <span class="k">"kind"</span>: <span class="s">"camera"</span>, <span class="k">"model"</span>: <span class="s">"AXIS P1375"</span> },
+    { <span class="k">"name"</span>: <span class="s">"nvr"</span>,       <span class="k">"ip"</span>: <span class="s">"172.31.90.20"</span>, <span class="k">"kind"</span>: <span class="s">"recorder"</span> }
+  ]
+}</code></pre>
+
+  <div class="col">
+    <p>Verified from inside the running browser container:</p>
+  </div>
+
+  <pre><code>$ docker exec sb-customer2-browser getent hosts camera-01.acme.internal
+<span class="g">172.31.90.10    camera-01.acme.internal</span>
+
+$ docker exec sb-customer2-browser curl -sk -o /dev/null -w '%{http_code}' https://camera-01.acme.internal/
+<span class="g">200</span>
+
+$ docker exec sb-customer2-browser getent hosts github.com     <span class="c"># normal DNS still works</span>
+<span class="g">140.82.121.3    github.com</span></code></pre>
+</section>
+
+<section>
+  <div class="sec-head"><p class="eyebrow">05 &middot; Reaching the customer</p></div>
+  <div class="col">
+    <h2>How we get in &mdash; and why they can accept it</h2>
+    <p>Nothing we run can reach a customer network on its own. The tunnel is always opened <strong>from inside</strong> their network outwards, which is why no firewall rule has to be negotiated.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Situation</th><th>What opens the tunnel</th><th>Effort per customer</th></tr></thead>
+        <tbody>
+          <tr><td>Site already has one of our robots</td><td>The robot &mdash; it already routes between its VPN and the local network</td><td>Config only</td></tr>
+          <tr><td>Customer runs WireGuard</td><td>Their endpoint. We hold a peer credential</td><td>Config only</td></tr>
+          <tr><td>Customer runs OpenVPN or IPsec</td><td>Their endpoint; the vpn image carries that client too</td><td>One-off image work</td></tr>
+          <tr><td>Customer runs a vendor VPN</td><td>May need a vendor client, sometimes a licence</td><td>Check before promising</td></tr>
+          <tr><td>Customer allows nothing</td><td>A small box we place, dialling out on demand</td><td>Hardware conversation</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="tag">What a customer is actually agreeing to</span>
+      <p>Access that does not exist until someone opens it, is limited to one site, is destroyed afterwards, and is written down every time. That is a much easier conversation than a permanent tunnel into their network &mdash; and it is the same conversation whichever row of the table they are in.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><p class="eyebrow">06 &middot; State of it</p></div>
+  <div class="col">
+    <h2>What works, and what does not yet</h2>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Capability</th><th>State</th><th>Evidence / what is missing</th></tr></thead>
+      <tbody>
+        <tr><td>Session pair with isolated tunnel</td><td><span class="pill ok">working</span></td><td>Tunnel down &rarr; camera unreachable; up &rarr; HTTP 200</td></tr>
+        <tr><td>Two customers at once, separate tunnels</td><td><span class="pill ok">working</span></td><td>Both reach their camera; neither can see the other</td></tr>
+        <tr><td>Device names instead of IPs</td><td><span class="pill ok">working</span></td><td><code>camera-01.acme.internal</code> resolves inside the session only</td></tr>
+        <tr><td>Console: connect, stop, live state, audit</td><td><span class="pill ok">working</span></td><td>A session starts in about two seconds</td></tr>
+        <tr><td>Login + MFA on the console</td><td><span class="pill ok">working</span></td><td>Unauthenticated request &rarr; 302 to authentik</td></tr>
+        <tr><td>Login on session URLs</td><td><span class="pill no">not yet</span></td><td>Needs a real domain &mdash; see below</td></tr>
+        <tr><td>Credentials from Infisical</td><td><span class="pill no">not yet</span></td><td>The lab writes them to disk</td></tr>
+        <tr><td>Idle timeout / reaper</td><td><span class="pill no">not yet</span></td><td>Sessions run until stopped by hand</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col">
+    <div class="callout warn">
+      <span class="tag">The gap that matters, and why it is still open</span>
+      <p>A live session's browser is currently reachable without logging in. authentik's <code>forward_single</code> mode protects exactly one hostname &mdash; the console. <code>forward_domain</code> would cover every session too, but it needs a <strong>real registrable domain</strong>: with a cookie domain of <code>localhost</code> every request returns 404. That was tried, and that is what happened.</p>
+      <p>Under a real domain the fix is two lines &mdash; switch the provider mode, and uncomment the middleware label that is already sitting in <code>session/docker-compose.session.yml</code>. Until then, this lab must not hold a real customer credential.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><p class="eyebrow">07 &middot; Try it</p></div>
+  <pre><code>git clone https://github.com/Mohamed-Ambos/session-broker
+cd session-broker &amp;&amp; cp .env.example .env    <span class="c"># then fill in the secrets</span>
+
+./scripts/lab-up.sh      <span class="c"># traefik, broker, fake customer, wireguard identities</span>
+./scripts/auth-up.sh     <span class="c"># authentik — first boot migrates a database, ~3 min</span>
+
+<span class="c"># log in at http://console.localhost:8088/  (akadmin / AK_ADMIN_PASSWORD)</span>
+<span class="c"># click Connect, then Open, then browse to https://camera-01.acme.internal/</span></code></pre>
+  <div class="col">
+    <p><code>LAB-GUIDE.md</code> in the repository walks through it properly, including the commands to verify each isolation claim yourself rather than take it on trust.</p>
+  </div>
+</section>
+
+<footer class="end">
+  <div class="col">
+    <p>Built 18 August 2026 &middot; 13 containers running &middot; companion to the Support Session Console design note.</p>
+  </div>
+</footer>
+
+</div>
