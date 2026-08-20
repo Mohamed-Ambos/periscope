@@ -16,6 +16,8 @@ open http://console.sb.test:8088/
 
 **→ [docs/session-lab-walkthrough.html](docs/session-lab-walkthrough.html)** — illustrated: every container, what it represents in real life, and how the pieces connect.
 
+**→ [docs/support-sessions-architecture.html](docs/support-sessions-architecture.html)** — the full picture: the lab as built, and what changes when the customer is on a real network somewhere else.
+
 **→ Read [LAB-GUIDE.md](LAB-GUIDE.md)** — what to click, what to check with your
 own eyes, and what has to change before a real customer.
 

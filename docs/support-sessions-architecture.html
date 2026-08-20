@@ -1,0 +1,962 @@
+<title>Disposable Support Sessions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+
+<style>
+:root{
+  --ground:#F4F6F8; --surface:#FFFFFF; --surface-2:#E9EEF3; --surface-3:#DDE5EC;
+  --ink:#111820; --ink-2:#43505E; --ink-3:#6C7B8A;
+  --rule:#C8D3DD; --rule-soft:#DEE6ED;
+  --accent:#1B4D8F; --accent-ink:#12365F; --accent-soft:#DCE7F4;
+  --warn:#A5501B; --warn-soft:#F6E7DA;
+  --ok:#2C6E4F;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --serif:"IBM Plex Serif",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1319; --surface:#161D26; --surface-2:#1D2731; --surface-3:#25313D;
+    --ink:#E6ECF2; --ink-2:#A9B7C5; --ink-3:#7B8B9B;
+    --rule:#2E3B48; --rule-soft:#222D38;
+    --accent:#79ADE8; --accent-ink:#BBD6F4; --accent-soft:#1A2A3E;
+    --warn:#E0A264; --warn-soft:#33251A;
+    --ok:#6FBF95;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1319; --surface:#161D26; --surface-2:#1D2731; --surface-3:#25313D;
+  --ink:#E6ECF2; --ink-2:#A9B7C5; --ink-3:#7B8B9B;
+  --rule:#2E3B48; --rule-soft:#222D38;
+  --accent:#79ADE8; --accent-ink:#BBD6F4; --accent-soft:#1A2A3E;
+  --warn:#E0A264; --warn-soft:#33251A;
+  --ok:#6FBF95;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:16.5px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin:0 auto; padding:0 28px 96px}
+.col{max-width:66ch}
+
+/* ---------- masthead ---------- */
+header.mast{
+  border-bottom:1px solid var(--rule); margin-bottom:56px;
+  padding:56px 0 36px;
+}
+.eyebrow{
+  font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-3); margin:0 0 18px;
+}
+h1{
+  font-family:var(--serif); font-weight:600; font-size:clamp(34px,5vw,52px);
+  line-height:1.08; letter-spacing:-.015em; margin:0 0 20px; text-wrap:balance;
+}
+.lede{font-size:19px; line-height:1.6; color:var(--ink-2); margin:0; max-width:60ch}
+.status{display:flex; flex-wrap:wrap; gap:10px; margin-top:28px}
+.chip{
+  font-family:var(--mono); font-size:12px; letter-spacing:.02em;
+  border:1px solid var(--rule); border-radius:2px; padding:5px 10px;
+  background:var(--surface); color:var(--ink-2);
+}
+.chip b{color:var(--ink); font-weight:500}
+.chip.on{border-color:var(--accent); color:var(--accent-ink); background:var(--accent-soft)}
+.chip.off{border-color:var(--warn); color:var(--warn); background:var(--warn-soft)}
+
+/* ---------- sections ---------- */
+section{margin:0 0 64px}
+h2{
+  font-family:var(--serif); font-weight:600; font-size:27px; line-height:1.2;
+  letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance;
+}
+h2 .num{
+  font-family:var(--mono); font-size:13px; font-weight:400; color:var(--accent);
+  letter-spacing:.08em; display:block; margin-bottom:9px;
+}
+h3{
+  font-family:var(--sans); font-weight:600; font-size:16px; letter-spacing:.01em;
+  margin:34px 0 8px; color:var(--ink);
+}
+p{margin:0 0 16px; max-width:66ch}
+ul,ol{margin:0 0 16px; padding-left:22px; max-width:66ch}
+li{margin:0 0 7px}
+strong{font-weight:600}
+em{font-style:italic; color:var(--ink-2)}
+code{
+  font-family:var(--mono); font-size:.88em; background:var(--surface-2);
+  padding:1px 5px; border-radius:2px; color:var(--ink);
+}
+a{color:var(--accent-ink); text-decoration-thickness:1px; text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.dek{color:var(--ink-3); font-size:15px; margin:-2px 0 22px; max-width:62ch}
+
+/* ---------- code ---------- */
+pre{
+  font-family:var(--mono); font-size:13px; line-height:1.62;
+  background:var(--surface); border:1px solid var(--rule); border-left:3px solid var(--accent);
+  border-radius:2px; padding:16px 18px; margin:0 0 8px;
+  overflow-x:auto;
+}
+pre code{background:none; padding:0; font-size:13px}
+.c{color:var(--ink-3)}
+.k{color:var(--accent-ink); font-weight:500}
+.filename{
+  font-family:var(--mono); font-size:12px; color:var(--ink-3);
+  letter-spacing:.02em; margin:22px 0 7px;
+}
+.cap{font-size:14px; color:var(--ink-3); margin:8px 0 0; max-width:66ch}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; margin:0 0 8px}
+table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:520px}
+th{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); text-align:left; font-weight:400;
+  padding:0 14px 8px 0; border-bottom:1px solid var(--rule);
+}
+td{padding:11px 14px 11px 0; border-bottom:1px solid var(--rule-soft); vertical-align:top}
+td:first-child{color:var(--ink); font-weight:500}
+tr:last-child td{border-bottom:none}
+td code,th code{font-size:12.5px}
+
+/* ---------- steps ---------- */
+ol.steps{list-style:none; padding:0; margin:0; max-width:74ch; counter-reset:s}
+ol.steps li{
+  counter-increment:s; position:relative; padding:0 0 20px 46px; margin:0;
+  border-left:1px solid var(--rule); margin-left:13px;
+}
+ol.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+ol.steps li::before{
+  content:counter(s); position:absolute; left:-13px; top:1px;
+  width:26px; height:26px; border-radius:50%;
+  background:var(--surface); border:1px solid var(--rule); color:var(--ink-2);
+  font-family:var(--mono); font-size:12px; display:flex; align-items:center; justify-content:center;
+}
+ol.steps li b{font-weight:600}
+ol.steps li p{margin:4px 0 0; font-size:15px; color:var(--ink-2)}
+ol.steps li pre{margin-top:9px; font-size:12.5px}
+
+/* ---------- callouts ---------- */
+.note{
+  border:1px solid var(--rule); border-left:3px solid var(--ink-3);
+  background:var(--surface); padding:15px 18px; margin:0 0 18px; max-width:70ch;
+  font-size:15px; border-radius:2px;
+}
+.note.key{border-left-color:var(--accent); background:var(--accent-soft)}
+.note.gap{border-left-color:var(--warn); background:var(--warn-soft)}
+.note p{margin:0; max-width:none}
+.note p + p{margin-top:9px}
+.note .h{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); display:block; margin-bottom:6px;
+}
+.note.gap .h{color:var(--warn)}
+.note.key .h{color:var(--accent-ink)}
+
+/* ---------- figures ---------- */
+figure{margin:26px 0 30px; padding:0}
+.figwrap{overflow-x:auto; background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:20px 18px}
+figure svg{display:block; width:100%; height:auto; min-width:660px; color:var(--ink-2)}
+figcaption{font-size:14px; color:var(--ink-3); margin-top:11px; max-width:70ch}
+
+.svg-box{fill:var(--surface-2); stroke:var(--rule); stroke-width:1}
+.svg-box.accent{fill:var(--accent-soft); stroke:var(--accent)}
+.svg-box.inner{fill:var(--surface); stroke:var(--rule)}
+.grp{fill:none; stroke:var(--rule); stroke-width:1; stroke-dasharray:3 4}
+.ln{stroke:var(--ink-3); stroke-width:1.4; fill:none}
+.ln.acc{stroke:var(--accent); stroke-width:1.8}
+.ln.dash{stroke-dasharray:4 4}
+text{font-family:var(--mono)}
+.svg-title{font-size:14px; fill:var(--ink); font-weight:500}
+.svg-label{font-size:12.5px; fill:var(--ink)}
+.svg-note{font-size:11.5px; fill:var(--ink-3)}
+.svg-mono{font-size:12px; fill:var(--ink-2)}
+.svg-eyebrow{font-size:11.5px; fill:var(--ink-3); letter-spacing:.1em}
+.svg-acc{fill:var(--accent-ink)}
+
+hr.div{border:none; border-top:1px solid var(--rule); margin:0 0 56px}
+footer{border-top:1px solid var(--rule); padding-top:24px; color:var(--ink-3); font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+@media (max-width:640px){
+  .wrap{padding:0 18px 64px}
+  body{font-size:16px}
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Ambos Security · remote support access</p>
+  <h1>Disposable Support Sessions</h1>
+  <p class="lede">The customer calls. An engineer clicks <b>Connect</b>. A container dials into that
+  customer's network and hands over a browser that is already inside it. When the call ends, the
+  browser, the tunnel and the credentials are destroyed.</p>
+  <div class="status">
+    <span class="chip on"><b>Lab</b> · built and verified</span>
+    <span class="chip"><b>Session containers</b> · production code already</span>
+    <span class="chip off"><b>Customer pilot</b> · not started</span>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">01 — THE IDEA</span>Access as an event, not a state</h2>
+  <p class="dek">Two claims, and both are structural — consequences of how it is built, not
+  promises about how it is used.</p>
+
+  <div class="tw"><table>
+    <tr><th style="width:33%">Claim</th><th>Enforced by</th></tr>
+    <tr><td>Access is off by default</td><td>There is no container, no browser and no tunnel until somebody clicks Connect.</td></tr>
+    <tr><td>One session reaches one customer</td><td><code>AllowedIPs</code> — the session's routing table contains that customer's subnet and nothing else. Not a policy: a route that does not exist.</td></tr>
+  </table></div>
+
+  <p>This is the opposite of the remote-desktop model. Nothing is installed on a customer PC,
+  nobody has to be present, and no one's desktop is taken over. What you get is a
+  <em>network position</em> — the ability to open <code>https://camera-01</code> — which is far
+  less than remote control and far easier for a security team to approve.</p>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">02 — LOCALLY</span>What runs on the laptop today</h2>
+  <p class="dek">Everything is prefixed <code>sb-</code>. Only one part of this picture is a
+  simulation; the session containers are production code, unchanged.</p>
+
+  <figure>
+    <div class="figwrap">
+      <svg viewBox="0 0 1020 545" role="img" aria-label="One session is three sibling containers sharing a single network namespace: the vpn creates the stack, the resolver and browser borrow it">
+        <defs>
+          <marker id="a1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text x="24" y="44" class="svg-eyebrow">OURS — ALWAYS ON</text>
+        <rect class="grp" x="24" y="56" width="600" height="130" rx="3"/>
+
+        <text x="330" y="50" class="svg-note">you open console.sb.test:8088</text>
+        <line x1="319" y1="30" x2="319" y2="80" class="ln" marker-end="url(#a1)"/>
+
+        <rect class="svg-box" x="44" y="84" width="170" height="56" rx="2"/>
+        <text x="129" y="108" class="svg-title" text-anchor="middle">authentik</text>
+        <text x="129" y="127" class="svg-note" text-anchor="middle">login + MFA</text>
+        <text x="44" y="160" class="svg-note">checks every request first</text>
+
+        <line x1="230" y1="112" x2="218" y2="112" class="ln" marker-end="url(#a1)"/>
+
+        <rect class="svg-box" x="234" y="84" width="170" height="56" rx="2"/>
+        <text x="319" y="108" class="svg-title" text-anchor="middle">Traefik</text>
+        <text x="319" y="127" class="svg-note" text-anchor="middle">one door, many rooms</text>
+
+        <line x1="408" y1="112" x2="420" y2="112" class="ln" marker-end="url(#a1)"/>
+
+        <rect class="svg-box" x="424" y="84" width="180" height="56" rx="2"/>
+        <text x="514" y="108" class="svg-title" text-anchor="middle">session manager</text>
+        <text x="514" y="127" class="svg-note" text-anchor="middle">start / stop / audit</text>
+
+        <line x1="514" y1="144" x2="514" y2="240" class="ln" marker-end="url(#a1)"/>
+        <text x="524" y="200" class="svg-mono">docker.sock</text>
+
+        <text x="24" y="232" class="svg-eyebrow">ONE SESSION — MADE ON CONNECT</text>
+        <rect class="grp" x="24" y="244" width="600" height="240" rx="3"/>
+        <text x="44" y="270" class="svg-label">same network namespace — one IP, one routing table</text>
+
+        <rect class="svg-box" x="44" y="286" width="180" height="80" rx="2"/>
+        <text x="134" y="312" class="svg-title" text-anchor="middle">vpn</text>
+        <text x="134" y="333" class="svg-note" text-anchor="middle">runs wg-quick up wg0</text>
+        <text x="134" y="351" class="svg-note" text-anchor="middle">cap_add: NET_ADMIN</text>
+
+        <rect class="svg-box" x="244" y="286" width="180" height="80" rx="2"/>
+        <text x="334" y="312" class="svg-title" text-anchor="middle">resolver</text>
+        <text x="334" y="333" class="svg-note" text-anchor="middle">dnsmasq · turns their</text>
+        <text x="334" y="351" class="svg-note" text-anchor="middle">device names into IPs</text>
+
+        <rect class="svg-box" x="444" y="286" width="160" height="80" rx="2"/>
+        <text x="524" y="312" class="svg-title" text-anchor="middle">browser</text>
+        <text x="524" y="333" class="svg-note" text-anchor="middle">firefox on :3000</text>
+        <text x="524" y="351" class="svg-note" text-anchor="middle">what you look at</text>
+
+        <line x1="134" y1="370" x2="134" y2="404" class="ln acc" marker-end="url(#a1)"/>
+        <text x="144" y="392" class="svg-note">creates it</text>
+        <line x1="334" y1="370" x2="334" y2="404" class="ln" marker-end="url(#a1)"/>
+        <text x="344" y="392" class="svg-note">borrows it</text>
+        <line x1="524" y1="370" x2="524" y2="404" class="ln" marker-end="url(#a1)"/>
+        <text x="534" y="392" class="svg-note">borrows it</text>
+
+        <rect class="svg-box accent" x="44" y="406" width="560" height="56" rx="2"/>
+        <text x="64" y="430" class="svg-label">one network stack — 172.24.0.* · eth0 + wg0</text>
+        <text x="64" y="450" class="svg-note">only the vpn container has an IP; the other two have none</text>
+
+        <text x="324" y="512" class="svg-note" text-anchor="middle">1. vpn starts and opens wg0    2. resolver and browser join it</text>
+
+        <path d="M 608 434 L 652 434 L 652 332 L 696 332" class="ln acc" marker-end="url(#a1)"/>
+        <text x="612" y="424" class="svg-mono svg-acc">wg0 tunnel</text>
+
+        <text x="680" y="232" class="svg-eyebrow">THE ONLY PRETEND PART</text>
+        <rect class="grp" x="680" y="244" width="316" height="240" rx="3"/>
+
+        <rect class="svg-box" x="700" y="300" width="276" height="64" rx="2"/>
+        <text x="720" y="326" class="svg-label">sb-wg-server</text>
+        <text x="720" y="346" class="svg-note">their firewall, or a box</text>
+
+        <line x1="838" y1="368" x2="838" y2="400" class="ln" marker-end="url(#a1)"/>
+        <text x="852" y="390" class="svg-note">sb_customer_lan</text>
+
+        <rect class="svg-box" x="700" y="404" width="276" height="64" rx="2"/>
+        <text x="720" y="430" class="svg-label">sb-camera-01</text>
+        <text x="720" y="450" class="svg-note">172.31.90.10 · self-signed</text>
+      </svg>
+    </div>
+    <figcaption>One session is <b>three sibling containers, not nested ones</b> — Docker never puts
+    a container inside another. What they share is a single network namespace: the vpn container
+    creates it (that is why it needs <code>NET_ADMIN</code>), and the resolver and browser join it
+    with <code>network_mode: "service:vpn"</code>, so Docker gives them no IP at all. The tunnel
+    belongs to the namespace, which is why it leaves the shared stack rather than any one box.</figcaption>
+  </figure>
+
+  <h3>What the resolver is for</h3>
+  <p>Without it, an engineer types IP addresses. The resolver is dnsmasq running <em>inside the
+  session</em>, serving that one customer's device names, with the browser's
+  <code>/etc/resolv.conf</code> mounted to point at <code>127.0.0.1</code>:</p>
+
+  <pre><code>exec dnsmasq --listen-address=127.0.0.1 --no-resolv --no-hosts \
+  --addn-hosts=/etc/devices.hosts   <span class="c"># rendered from session-manager/devices/&lt;customer&gt;.json</span>
+  --server=127.0.0.11               <span class="c"># anything else → Docker's resolver</span></code></pre>
+
+  <p>So the engineer types <code>camera-01.acme.internal</code>, not <code>172.31.90.10</code>.
+  Names the customer doesn't own still resolve normally, the list exists only inside that session
+  and only for that customer, and it dies with it. <b>Nobody edits a hosts file on any laptop,
+  ever.</b></p>
+
+  <p class="cap">If a customer runs their own DNS server on that LAN, one extra flag —
+  <code>--server=/acme.internal/192.168.131.1</code> — forwards their zone to them instead, so names
+  never go stale. Their resolver must be inside <code>AllowedIPs</code>; thanks to the NAT at the
+  site gateway, your queries arrive looking like they came from a machine on their own LAN.</p>
+
+  <h3>Three groups of containers</h3>
+  <div class="tw"><table>
+    <tr><th style="width:26%">Group</th><th style="width:37%">Containers</th><th>In production</th></tr>
+    <tr><td>Ours, always on</td><td><code>sb-traefik</code>, <code>sb-session-manager</code>, <code>sb-ak-*</code> (authentik)</td><td>The same, on a server</td></tr>
+    <tr><td>The pretend customer</td><td><code>sb-wg-server</code>, <code>sb-camera-01</code></td><td>Replaced by a real site — see §06</td></tr>
+    <tr><td>One session, per customer</td><td><code>sb-&lt;id&gt;-vpn</code>, <code>-resolver</code>, <code>-browser</code></td><td><b>Identical. Unchanged.</b></td></tr>
+  </table></div>
+
+  <h3>Three networks</h3>
+  <p>These are not containers and never appear in <code>docker ps</code>.</p>
+  <div class="tw"><table>
+    <tr><th style="width:26%">Network</th><th style="width:37%">Stands for</th><th>Attached</th></tr>
+    <tr><td><code>sb_customer_lan</code></td><td>the customer's LAN · <code>internal: true</code></td><td>wg-server, camera — <b>never a session</b></td></tr>
+    <tr><td><code>sb_transit</code></td><td>the public internet</td><td>wg-server, each session's vpn</td></tr>
+    <tr><td><code>sb_sessions</code></td><td>our internal network</td><td>Traefik, session manager, authentik, each session's vpn</td></tr>
+  </table></div>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">03 — THE SEQUENCE</span>What one click actually does</h2>
+  <p class="dek">From pressing Connect to looking at a camera. Seven steps, no magic in any of them.</p>
+
+  <ol class="steps">
+    <li><b>The page calls the API.</b>
+      <p>The Connect button is nine lines of JavaScript. It posts, then reloads the page.</p>
+      <pre><code>await fetch('/api/sessions/customer2', {method: 'POST'});</code></pre></li>
+
+    <li><b>Traefik stops the request and asks authentik.</b>
+      <p>Forward auth — see §05. Only a <code>200 OK</code> lets it continue to the session manager.</p></li>
+
+    <li><b>The session manager checks the customer exists, then runs a script.</b>
+      <p>The same script a human would run at the terminal. One code path, so it cannot drift.</p>
+      <pre><code><span class="k">if</span> cid <span class="k">not in</span> {c[<span class="c">"id"</span>] <span class="k">for</span> c <span class="k">in</span> customers()}:
+    <span class="k">raise</span> HTTPException(404, <span class="c">"unknown customer"</span>)
+r = run(<span class="c">"session-up.sh"</span>, cid)
+audit(<span class="c">"start"</span>, cid, r.returncode == 0)</code></pre></li>
+
+    <li><b>The script renders this customer's config and calls Compose.</b>
+      <p>Note <code>HOST_DIR</code>: bind-mount paths are resolved by the Docker daemon <em>on the
+      host</em>, so the session manager must pass the host's path, never its own <code>/project</code>.</p>
+      <pre><code>SESSION_ID=<span class="c">"$SESSION_ID"</span> WG_CONF=<span class="c">"${HOST_DIR}/${CONF}"</span> \
+docker compose -f session/docker-compose.session.yml \
+  -p <span class="c">"sb-session-${SESSION_ID}"</span> up -d --build</code></pre></li>
+
+    <li><b>The vpn container starts and opens the tunnel.</b>
+      <p>Its entrypoint runs <code>wg-quick up wg0</code>, which reads the mounted config, creates
+      the interface, and installs one route per <code>AllowedIPs</code> entry.</p></li>
+
+    <li><b>The browser starts inside that container's network.</b>
+      <p><code>network_mode: "service:vpn"</code>. Docker gives it no IP and no interfaces. It can
+      reach exactly what the tunnel reaches, and nothing else.</p></li>
+
+    <li><b>Traefik notices the new container and routes to it.</b>
+      <p>It is subscribed to Docker's event stream, reads the container's labels, and creates a
+      router for <code>customer2.sb.test</code> within a second. The page reloads and the row now
+      shows <b>Stop</b> and <b>Open</b>.</p></li>
+  </ol>
+
+  <div class="note key" style="margin-top:26px">
+    <span class="h">Worth noticing</span>
+    <p>The session manager never touches the tunnel. It only asks Docker for containers — the tunnel is
+    opened by the container itself, at step 5, using the config that was mounted into it. The
+    session manager's entire job is create and destroy.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">04 — THE FILES</span>The four that carry the design</h2>
+  <p class="dek">Everything above is these. Nothing else in the repo is load-bearing.</p>
+
+  <p class="filename">session/docker-compose.session.yml — the whole idea, in forty lines</p>
+  <pre><code>services:
+  vpn:
+    build: ../session/vpn
+    cap_add: [NET_ADMIN]            <span class="c"># may create wg0 and set routes</span>
+    volumes:
+      - ${WG_CONF}:/etc/wireguard/wg0.conf:ro
+    labels:                         <span class="c"># NOTE: labels live HERE, not on the browser</span>
+      - traefik.http.routers.${SESSION_ID}.rule=Host(`${SESSION_ID}.${LAB_DOMAIN}`)
+      - traefik.http.services.${SESSION_ID}.loadbalancer.server.port=3000
+
+  browser:
+    image: lscr.io/linuxserver/firefox:latest
+    network_mode: <span class="k">"service:vpn"</span>     <span class="c"># ← the isolation guarantee, one line</span>
+    depends_on: [vpn, resolver]</code></pre>
+  <p class="cap">The Traefik labels sit on the <b>vpn</b> container and point at port 3000 — Firefox's
+  port. A container with no IP cannot be routed to, so the namespace <em>owner</em> carries the
+  routing and points at the port its tenant listens on. Put the labels on the browser instead and
+  Traefik silently creates no router at all.</p>
+
+  <p class="filename">session/vpn/entrypoint.sh — what opens the tunnel</p>
+  <pre><code>#!/bin/sh
+<span class="k">set</span> -eu                          <span class="c"># die on any failure, rather than run without a tunnel</span>
+
+wg-quick up wg0                  <span class="c"># reads /etc/wireguard/wg0.conf, adds the routes</span>
+wg show wg0   | sed 's/^/[vpn]   /'
+ip route      | sed 's/^/[vpn]   route: /'   <span class="c"># the audit line: one customer, one route</span>
+
+<span class="k">trap</span> 'wg-quick down wg0 || true; exit 0' TERM INT
+<span class="k">while</span> :; <span class="k">do</span> sleep 3600 &amp; wait $!; <span class="k">done</span>   <span class="c"># ← never finish</span></code></pre>
+  <p class="cap">Two things here are deliberate. A container lives exactly as long as its main
+  process, so if this script ended the namespace would be destroyed <em>with the browser inside
+  it</em> — hence the endless loop. And <code>sleep &amp; wait</code> rather than a plain sleep,
+  because a shell will not run a <code>trap</code> while a foreground command is still running:
+  <code>wait</code> is interruptible, so <code>docker stop</code> is honoured immediately.</p>
+
+  <p class="filename">session-manager/app.py — start, stop, and the record</p>
+  <pre><code><span class="k">def</span> run(script, cid):
+    <span class="c">"""Sessions are started by the same scripts a human would run."""</span>
+    <span class="k">return</span> subprocess.run([os.path.join(PROJECT, <span class="c">"scripts"</span>, script), cid], ...)
+
+<span class="k">def</span> live():                       <span class="c"># no database anywhere — ask Docker</span>
+    out = subprocess.run([<span class="c">"docker"</span>, <span class="c">"ps"</span>, <span class="c">"--filter"</span>, <span class="c">"name=-vpn"</span>, ...]).stdout
+    <span class="c"># sb-customer2-vpn → customer2</span>
+
+<span class="k">def</span> audit(action, cid, ok):       <span class="c"># append-only, outside the session</span>
+    fh.write(f<span class="c">'{now}\t{action}\t{cid}\t{"ok" if ok else "FAILED"}\n'</span>)</code></pre>
+  <p class="cap">The session manager keeps no state. It asks Docker what is running, so it can never disagree
+  with reality, can be restarted mid-session, and has nothing to corrupt or back up. Its power comes
+  entirely from two mounts — the Docker socket and the project directory — which is also why it is
+  the most security-critical container you will run.</p>
+
+  <p class="filename">session/conf/customer2.conf — the tunnel's identity, lab version</p>
+  <pre><code>[Interface]
+Address    = 10.13.13.3          <span class="c"># my address inside the tunnel</span>
+PrivateKey = &lt;this session's key&gt;
+
+[Peer]
+PublicKey  = &lt;the customer end's key&gt;
+Endpoint   = sb-wg-server:51820  <span class="c"># ← a container name. This is the lab-ism.</span>
+AllowedIPs = 172.31.90.0/24      <span class="c"># route out AND filter in — one customer only</span></code></pre>
+  <p class="cap"><code>AllowedIPs</code> does two jobs: outbound it becomes a route
+  (<em>send this subnet down the tunnel</em>), inbound it is a filter (<em>accept nothing else from
+  this peer</em>). One line, and it is the whole "one session, one customer" guarantee.
+  <b>Every customer gets its own key pair</b> — sharing one silently breaks the second session,
+  because a WireGuard server tracks one endpoint per public key and the newer handshake steals the
+  older tunnel.</p>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">05 — THE DOOR</span>authentik, and why it is not inside the session manager</h2>
+  <p class="dek">The console is a page whose buttons open tunnels into customer networks. It needs a
+  lock — but not one bolted onto the most dangerous container in the system.</p>
+
+  <p>The session manager holds a read-write Docker socket, which is equivalent to root on the host. Adding
+  accounts, password hashing, sessions and MFA to <em>that</em> would mean the most privileged thing
+  you run is also the one with the most hand-written code in it. So the door goes in front instead.</p>
+
+  <figure>
+    <div class="figwrap">
+      <svg viewBox="0 0 940 300" role="img" aria-label="Forward authentication: Traefik pauses each request and asks authentik before forwarding it to the session manager">
+        <defs>
+          <marker id="a2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <rect class="svg-box" x="40" y="40" width="150" height="60" rx="2"/>
+        <text x="115" y="66" class="svg-title" text-anchor="middle">engineer</text>
+        <text x="115" y="85" class="svg-note" text-anchor="middle">a browser</text>
+
+        <line x1="194" y1="70" x2="266" y2="70" class="ln" marker-end="url(#a2)"/>
+        <text x="230" y="60" class="svg-note" text-anchor="middle">GET</text>
+
+        <rect class="svg-box" x="270" y="40" width="160" height="60" rx="2"/>
+        <text x="350" y="66" class="svg-title" text-anchor="middle">Traefik</text>
+        <text x="350" y="85" class="svg-note" text-anchor="middle">pauses the request</text>
+
+        <line x1="434" y1="70" x2="732" y2="70" class="ln acc" marker-end="url(#a2)"/>
+        <text x="583" y="60" class="svg-mono svg-acc" text-anchor="middle">only on 200 OK</text>
+
+        <rect class="svg-box accent" x="736" y="40" width="164" height="60" rx="2"/>
+        <text x="818" y="66" class="svg-title" text-anchor="middle">session manager</text>
+        <text x="818" y="85" class="svg-note" text-anchor="middle">no auth code at all</text>
+
+        <line x1="310" y1="104" x2="310" y2="176" class="ln" marker-end="url(#a2)"/>
+        <text x="298" y="136" class="svg-note" text-anchor="end">is this allowed?</text>
+
+        <line x1="392" y1="176" x2="392" y2="104" class="ln" marker-end="url(#a2)"/>
+        <text x="404" y="136" class="svg-note">200, or 302 to login</text>
+
+        <rect class="svg-box" x="270" y="180" width="160" height="60" rx="2"/>
+        <text x="350" y="206" class="svg-title" text-anchor="middle">authentik</text>
+        <text x="350" y="225" class="svg-note" text-anchor="middle">users · MFA · groups</text>
+
+        <text x="40" y="272" class="svg-note">On success authentik's answer carries X-authentik-username, which Traefik copies onto the request.</text>
+      </svg>
+    </div>
+    <figcaption>Forward authentication. Traefik holds each request, asks authentik over HTTP, and
+    forwards it only on a 200 — otherwise the browser is redirected to the login page.</figcaption>
+  </figure>
+
+  <p class="filename">two labels, and the session manager never knows</p>
+  <pre><code><span class="c"># on the session manager's router:</span>
+- traefik.http.routers.session-manager.middlewares=ak-auth@docker
+
+<span class="c"># on authentik, defining that middleware:</span>
+- traefik.http.middlewares.ak-auth.forwardauth.address=http://ak-server:9000/outpost.goauthentik.io/auth/traefik
+- traefik.http.middlewares.ak-auth.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-groups</code></pre>
+
+  <h3>Where to use it, and where not</h3>
+  <div class="tw"><table>
+    <tr><th style="width:30%">Surface</th><th style="width:20%">Guarded?</th><th>Why</th></tr>
+    <tr><td>The console</td><td><b>Yes</b></td><td>Its buttons open tunnels. This is the door that matters most.</td></tr>
+    <tr><td>Session URLs</td><td style="color:var(--warn)"><b>Not yet</b></td><td>See the gap below — this must be closed before a real credential exists.</td></tr>
+    <tr><td>Inside the session</td><td>No</td><td>The customer's own devices have their own logins. We are a network position, not an identity.</td></tr>
+  </table></div>
+
+  <div class="note gap">
+    <span class="h">Known gap — not built</span>
+    <p>A live session's browser answers without a login: <code>curl -H 'Host: customer2.sb.test:8088' …</code>
+    returns 200. authentik's <code>forward_single</code> mode covers exactly one hostname.
+    <code>forward_domain</code> would cover the console <em>and</em> every session with one provider;
+    it was tried twice — under <code>.localhost</code> the cookie is rejected outright (a single-label
+    TLD is a public suffix), and under <code>sb.test</code> the cookie is valid but the outpost still
+    answers 404 for every host. <b>That second failure is unresolved — do not assume a real domain
+    fixes it.</b></p>
+    <p>The better answer, and the one on the roadmap: the session manager creates a provider <em>per session</em>
+    through authentik's API. That also buys what <code>forward_domain</code> cannot — <em>which engineer
+    may open which customer</em>, rather than only who may log in.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">06 — REAL LIFE</span>Where the tunnel actually goes</h2>
+  <p class="dek">The session half needs no changes at all. What changes is where the tunnel
+  terminates — and that single change inverts who dials whom.</p>
+
+  <figure>
+    <div class="figwrap">
+      <svg viewBox="0 0 1020 300" role="img" aria-label="In the lab the session dials the customer; at a real customer both ends dial out to a public hub">
+        <defs>
+          <marker id="a3" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text x="60" y="46" class="svg-eyebrow">IN THE LAB</text>
+        <rect class="svg-box" x="60" y="60" width="170" height="60" rx="2"/>
+        <text x="145" y="96" class="svg-label" text-anchor="middle">session vpn</text>
+        <line x1="234" y1="90" x2="416" y2="90" class="ln" marker-end="url(#a3)"/>
+        <text x="325" y="80" class="svg-mono" text-anchor="middle">dials in</text>
+        <rect class="svg-box" x="420" y="60" width="220" height="60" rx="2"/>
+        <text x="530" y="96" class="svg-label" text-anchor="middle">sb-wg-server</text>
+        <text x="680" y="94" class="svg-note">possible only because we own both ends</text>
+
+        <text x="60" y="186" class="svg-eyebrow">AT A REAL CUSTOMER</text>
+        <rect class="svg-box" x="60" y="200" width="170" height="60" rx="2"/>
+        <text x="145" y="236" class="svg-label" text-anchor="middle">session vpn</text>
+        <line x1="234" y1="230" x2="416" y2="230" class="ln acc" marker-end="url(#a3)"/>
+        <text x="325" y="220" class="svg-mono svg-acc" text-anchor="middle">dials out</text>
+        <rect class="svg-box accent" x="420" y="200" width="220" height="60" rx="2"/>
+        <text x="530" y="230" class="svg-label" text-anchor="middle">public hub</text>
+        <text x="530" y="249" class="svg-note" text-anchor="middle">UDP 51820</text>
+        <line x1="826" y1="230" x2="648" y2="230" class="ln acc" marker-end="url(#a3)"/>
+        <text x="737" y="220" class="svg-mono svg-acc" text-anchor="middle">dials out</text>
+        <rect class="svg-box" x="830" y="200" width="170" height="60" rx="2"/>
+        <text x="915" y="230" class="svg-label" text-anchor="middle">site gateway</text>
+        <text x="915" y="249" class="svg-note" text-anchor="middle">robot, or a box</text>
+      </svg>
+    </div>
+    <figcaption>The one thing that inverts. A real customer is behind NAT, so you cannot dial into
+    them — and asking for an inbound port forward is exactly what a security team refuses. Instead
+    both ends make <b>outbound</b> connections to a hub with a public address. Neither side accepts
+    an incoming connection.</figcaption>
+  </figure>
+
+  <p>The entire ask on the customer becomes one sentence: <b>this device needs to send outbound UDP
+  to one address.</b> No inbound firewall rule, no port forward, no public IP, no DMZ — the same
+  category of traffic as their browser and their email client.</p>
+
+  <h3>Why outbound-only is the whole sales pitch</h3>
+  <p>The obvious alternative is to ask the customer to open a port and forward it to the box. That
+  request is refused by every competent security team, and they are right to refuse it — a forwarded
+  port is reachable by the entire internet, not just by you.</p>
+
+  <figure>
+    <div class="figwrap">
+      <svg viewBox="0 0 1020 330" role="img" aria-label="An inbound port forward exposes the box to the whole internet; an outbound-only connection to our hub exposes nothing">
+        <defs>
+          <marker id="a5" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text x="60" y="46" class="svg-eyebrow">WHAT WE DO NOT ASK FOR</text>
+        <rect class="svg-box" x="60" y="60" width="180" height="60" rx="2"/>
+        <text x="150" y="96" class="svg-label" text-anchor="middle">the internet</text>
+        <line x1="244" y1="90" x2="376" y2="90" class="ln" marker-end="url(#a5)"/>
+        <text x="310" y="80" class="svg-mono" text-anchor="middle">inbound</text>
+        <rect class="svg-box" x="380" y="60" width="150" height="60" rx="2"/>
+        <text x="455" y="96" class="svg-label" text-anchor="middle">their firewall</text>
+        <line x1="534" y1="90" x2="666" y2="90" class="ln" marker-end="url(#a5)"/>
+        <text x="600" y="80" class="svg-mono" text-anchor="middle">forwarded</text>
+        <rect class="svg-box" x="670" y="60" width="200" height="60" rx="2"/>
+        <text x="770" y="86" class="svg-label" text-anchor="middle">the box</text>
+        <text x="770" y="106" class="svg-note" text-anchor="middle">port 51820 exposed</text>
+        <text x="770" y="142" class="svg-note" text-anchor="middle">a hole any stranger can knock on</text>
+
+        <text x="60" y="196" class="svg-eyebrow">WHAT WE ACTUALLY ASK FOR</text>
+        <rect class="svg-box" x="60" y="210" width="200" height="60" rx="2"/>
+        <text x="160" y="246" class="svg-label" text-anchor="middle">the box or robot</text>
+        <line x1="264" y1="240" x2="376" y2="240" class="ln acc" marker-end="url(#a5)"/>
+        <text x="320" y="230" class="svg-mono svg-acc" text-anchor="middle">outbound</text>
+        <rect class="svg-box" x="380" y="210" width="150" height="60" rx="2"/>
+        <text x="455" y="246" class="svg-label" text-anchor="middle">their firewall</text>
+        <line x1="534" y1="240" x2="666" y2="240" class="ln acc" marker-end="url(#a5)"/>
+        <text x="600" y="230" class="svg-mono svg-acc" text-anchor="middle">normal traffic</text>
+        <rect class="svg-box accent" x="670" y="210" width="200" height="60" rx="2"/>
+        <text x="770" y="236" class="svg-label" text-anchor="middle">our hub</text>
+        <text x="770" y="256" class="svg-note" text-anchor="middle">public IP, and ours</text>
+        <text x="770" y="292" class="svg-note" text-anchor="middle">nothing can reach in — no inbound rule</text>
+      </svg>
+    </div>
+    <figcaption>The difference is one arrow direction, and it decides whether the customer has to
+    expose anything. Their end only ever starts conversations; it never accepts one.</figcaption>
+  </figure>
+
+  <div class="tw"><table>
+    <tr><th style="width:24%">End</th><th style="width:22%">Direction</th><th style="width:28%">Their firewall must allow</th><th>Exposed to the internet</th></tr>
+    <tr><td>The site gateway</td><td>outbound only</td><td>outbound UDP to one address:port</td><td><b>nothing</b></td></tr>
+    <tr><td>Our session</td><td>outbound only</td><td>— (our side)</td><td><b>nothing</b></td></tr>
+    <tr><td>The hub</td><td>accepts inbound</td><td>— (ours, and it is meant to)</td><td>one UDP port</td></tr>
+  </table></div>
+
+  <div class="note key">
+    <span class="h">A detail worth having ready when they push back</span>
+    <p>Even the hub is quiet. WireGuard never replies to a packet that is not signed by a known key —
+    no handshake, no error, no reset. To a port scanner the hub looks like a closed port on a dead
+    host. There is no banner to fingerprint and no login to brute-force, because there is no login.</p>
+    <p>So the honest summary for a customer: <b>you install nothing, you change nothing on your
+    firewall, and nothing on your network becomes reachable from outside.</b> The one requirement is
+    that a device on your LAN may send outbound UDP — which their browser already does.</p>
+  </div>
+
+
+  <figure>
+    <div class="figwrap">
+      <svg viewBox="0 0 1080 580" role="img" aria-label="Production deployment: our server, a public WireGuard hub, and a site gateway that routes and NATs onto the customer LAN">
+        <defs>
+          <marker id="a4" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 8 4 L 0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text x="24" y="58" class="svg-eyebrow">OUR SERVER — ALWAYS ON</text>
+        <rect class="grp" x="24" y="70" width="340" height="420" rx="3"/>
+
+        <rect class="svg-box" x="44" y="100" width="300" height="44" rx="2"/>
+        <text x="194" y="128" class="svg-label" text-anchor="middle">authentik — login + MFA</text>
+
+        <rect class="svg-box" x="44" y="160" width="300" height="44" rx="2"/>
+        <text x="194" y="188" class="svg-label" text-anchor="middle">Traefik — real domain + cert</text>
+
+        <rect class="svg-box" x="44" y="220" width="300" height="44" rx="2"/>
+        <text x="194" y="248" class="svg-label" text-anchor="middle">session manager — start / stop / audit</text>
+
+        <rect class="svg-box accent" x="44" y="300" width="300" height="130" rx="2"/>
+        <text x="60" y="324" class="svg-label">session vpn — wg0</text>
+        <rect class="svg-box inner" x="60" y="336" width="268" height="36" rx="2"/>
+        <text x="80" y="359" class="svg-label">browser · no IP</text>
+        <rect class="svg-box inner" x="60" y="380" width="268" height="36" rx="2"/>
+        <text x="80" y="403" class="svg-label">resolver · their names</text>
+
+        <text x="430" y="238" class="svg-eyebrow">RENDEZVOUS</text>
+        <rect class="svg-box accent" x="430" y="250" width="220" height="80" rx="2"/>
+        <text x="540" y="282" class="svg-title" text-anchor="middle">WireGuard hub</text>
+        <text x="540" y="304" class="svg-note" text-anchor="middle">public IP · UDP 51820</text>
+        <text x="540" y="354" class="svg-note" text-anchor="middle">ip_forward + per-peer rules</text>
+
+        <line x1="350" y1="366" x2="426" y2="300" class="ln acc" marker-end="url(#a4)"/>
+        <text x="352" y="340" class="svg-mono svg-acc">dials out</text>
+
+        <line x1="730" y1="278" x2="656" y2="288" class="ln acc" marker-end="url(#a4)"/>
+        <text x="694" y="256" class="svg-mono svg-acc" text-anchor="middle">dials out</text>
+
+        <text x="716" y="58" class="svg-eyebrow">THE CUSTOMER'S SITE</text>
+        <rect class="grp" x="716" y="70" width="340" height="420" rx="3"/>
+
+        <rect class="svg-box" x="736" y="220" width="300" height="112" rx="2"/>
+        <text x="752" y="246" class="svg-label">robot, or a small box</text>
+        <text x="752" y="268" class="svg-note">wireguard-client + lan-over-vpn</text>
+        <text x="752" y="290" class="svg-note">ip_forward · NAT onto their LAN</text>
+        <text x="752" y="312" class="svg-note">PersistentKeepalive = 25</text>
+
+        <line x1="886" y1="336" x2="886" y2="386" class="ln" marker-end="url(#a4)"/>
+        <text x="900" y="366" class="svg-note">br0</text>
+
+        <rect class="svg-box" x="736" y="390" width="300" height="60" rx="2"/>
+        <text x="752" y="414" class="svg-label">camera · nvr · 192.168.x.x</text>
+        <text x="752" y="436" class="svg-note">their LAN — no routes added</text>
+
+        <path d="M 194 434 L 194 512 L 886 512 L 886 458" class="ln acc dash" marker-end="url(#a4)"/>
+        <text x="540" y="544" class="svg-mono svg-acc" text-anchor="middle">one HTTP request: browser → hub → gateway → camera</text>
+      </svg>
+    </div>
+    <figcaption>The production shape. Solid arrows are who dials whom — both point <em>into</em> the
+    hub. The dashed line is where the traffic actually goes once both tunnels are up.</figcaption>
+  </figure>
+
+  <h3>How the tunnel gets created, step by step</h3>
+  <ol class="steps">
+    <li><b>Generate a key pair for the site.</b>
+      <p>One per site, never shared. The public half goes into the hub's config; the private half
+      goes into the gateway's, and nowhere else.</p>
+      <pre><code>wg genkey | tee site-acme.key | wg pubkey &gt; site-acme.pub</code></pre></li>
+    <li><b>Add the site as a peer on the hub, with a route to their LAN.</b>
+      <p><code>AllowedIPs</code> on the hub is what tells it <em>"traffic for that subnet goes to
+      this peer."</em></p></li>
+    <li><b>Deliver the config to the site over a channel that is not email.</b>
+      <p>That file is the key to their network. Later this comes from Infisical and never lands on
+      disk at all.</p></li>
+    <li><b>The gateway dials out and keeps the hole open.</b>
+      <p><code>PersistentKeepalive = 25</code> sends a tiny packet every 25 seconds so the customer's
+      NAT does not forget the mapping. This is what lets us start a session hours later.</p></li>
+    <li><b>On Connect, the session becomes a peer too — and only then.</b>
+      <p>Its <code>AllowedIPs</code> is that one customer's LAN. The hub forwards between the two
+      peers; per-peer rules stop it forwarding anywhere else.</p></li>
+  </ol>
+
+  <p class="filename">the session's wg0.conf — real, rendered per session</p>
+  <pre><code>[Interface]
+Address    = 10.8.0.60/32
+PrivateKey = &lt;fetched from Infisical at start, never written to disk&gt;
+
+[Peer]
+PublicKey  = &lt;hub public key&gt;
+Endpoint   = vpn.ambos-security.com:51820   <span class="c"># ← was a container name in the lab</span>
+AllowedIPs = 192.168.131.0/24               <span class="c"># ← this customer's LAN. Never 0.0.0.0/0.</span></code></pre>
+
+  <p class="filename">the site gateway's wg0.conf — lives on the robot or the box</p>
+  <pre><code>[Interface]
+Address    = 10.8.0.20/32
+PrivateKey = &lt;the site's private key&gt;
+
+[Peer]
+PublicKey           = &lt;hub public key&gt;
+Endpoint            = vpn.ambos-security.com:51820
+AllowedIPs          = 10.8.0.0/24     <span class="c"># reach us; NOT 0.0.0.0/0 — we do not take</span>
+PersistentKeepalive = 25              <span class="c"># their default route</span></code></pre>
+
+  <p class="filename">the hub's wg0.conf — one block per end</p>
+  <pre><code>[Peer]                                <span class="c"># the site gateway</span>
+PublicKey  = &lt;site public key&gt;
+AllowedIPs = 10.8.0.20/32, 192.168.131.0/24    <span class="c"># ← the route to their LAN</span>
+
+[Peer]                                <span class="c"># a session, added when one exists</span>
+PublicKey  = &lt;session public key&gt;
+AllowedIPs = 10.8.0.60/32</code></pre>
+
+  <h3>Two settings on the gateway do all the work</h3>
+  <div class="tw"><table>
+    <tr><th style="width:26%">Setting</th><th>What it buys</th></tr>
+    <tr><td><code>ip_forward = 1</code></td><td>Off by default on Linux — a normal machine accepts traffic for itself and drops the rest. On, it becomes a router: the tunnel gets you <em>to</em> the gateway, this gets you <em>past</em> it.</td></tr>
+    <tr><td><code>MASQUERADE</code><br>(<code>ENABLE_NAT=1</code>)</td><td><b>The reason the customer changes nothing.</b> Traffic off the tunnel is rewritten to appear to come from the gateway — an address their devices already know and already route back to. Without it you would need a static route added to their router, at every customer, with a change ticket each time.</td></tr>
+  </table></div>
+
+  <div class="note">
+    <span class="h">Say this before your senior asks</span>
+    <p>There <em>is</em> one standing tunnel: gateway → hub, held open by keepalive. But it is a pipe
+    with nobody at the other end. No session exists, no browser exists, and the hub's rules give the
+    site peer nobody to talk to until a session appears.</p>
+    <p><b>The path exists; the access does not.</b> If a customer wants even the pipe closed, the box
+    can hold only a control channel and bring the tunnel up when told — same outbound-only shape,
+    and our side is identical either way. Something has to be reachable in order to be woken up.</p>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">07 — THE FAR END</span>Getting a foothold at the customer</h2>
+  <p class="dek">A tunnel has two ends. Something must exist on their network — there is no way
+  around it. What varies is how much you are asking of them.</p>
+
+  <div class="tw"><table>
+    <tr><th style="width:30%">Form</th><th style="width:32%">What you are asking</th><th>Verdict</th></tr>
+    <tr><td>Their firewall already speaks WireGuard, IPsec or OpenVPN</td><td>a config entry from their IT</td><td>Common in businesses. Cheapest, but on their schedule.</td></tr>
+    <tr><td><b>A robot is already on site</b></td><td><b>nothing</b></td><td>Already installed, already powered, already approved. This is the answer wherever it applies.</td></tr>
+    <tr><td>You ship a small box</td><td>"plug this into a network port"</td><td>Hardware, not software. No install, no admin rights, no PC touched.</td></tr>
+    <tr><td>Nothing at all</td><td>—</td><td>Impossible. Don't promise it — fall back to §07 below.</td></tr>
+  </table></div>
+
+  <h3>The robot is already a site gateway</h3>
+  <p><code>fleet-management</code> ships two services to every robot, and both are <em>defined but
+  dormant</em> — they sit behind a Compose profile, so <code>docker compose up</code> ignores them
+  until you ask for them by name.</p>
+
+  <pre><code>  wireguard-client:
+    profiles: [<span class="c">"vpn"</span>]          <span class="c"># ← shipped, not started</span>
+    volumes: [ {source: ${WG_CONFIG_HOST_FILE}, target: /run/wireguard/wg0.conf} ]
+
+  lan-over-vpn:
+    profiles: [<span class="c">"vpn"</span>]
+    privileged: true             <span class="c"># needed to set host sysctls (ip_forward)</span>
+    environment:
+      LAN_IFACE:  <span class="c">"${LAN_IFACE:-br0}"</span>
+      LAN_CIDR:   <span class="c">"${LAN_CIDR:-192.168.131.0/24}"</span>
+      ENABLE_NAT: <span class="c">"${ENABLE_NAT:-1}"</span></code></pre>
+
+  <p>Turning a robot into a site gateway is therefore not an install. It is naming a profile:</p>
+  <pre><code>docker compose --env-file <span class="c">"$robot/robot-services.env"</span> \
+  -f services/docker-compose.yml -f deploy/platforms/&lt;platform&gt;/docker-compose.yml \
+  --profile vpn up -d --build wireguard-client lan-over-vpn</code></pre>
+
+  <div class="note key">
+    <span class="h">And the delta is smaller still</span>
+    <p>Robots <em>already</em> run <code>wireguard-client</code> — that is how fleet management
+    reaches them. The tunnel from robot to hub already exists and is already up. The only missing
+    half is the forwarding: <code>ip_forward</code> + NAT, so traffic arriving on <code>wg0</code>
+    can continue onto the customer's LAN instead of stopping at the robot.</p>
+  </div>
+
+  <h3>How you reach the robot to switch it on</h3>
+  <div class="tw"><table>
+    <tr><th style="width:26%">Route</th><th style="width:20%">State</th><th>Notes</th></tr>
+    <tr><td>Over the tunnel that already exists</td><td>works today</td><td>The robot is on the hub's subnet. SSH in, run the command. Fine for a pilot; a human with SSH access to customer hardware is not the permanent answer.</td></tr>
+    <tr><td>Over NATS, via <code>admin-bridge</code></td><td>partly built</td><td>The robot already runs a NATS listener accepting <b>named, authorised actions</b> (today: recover-stack, with signed authorisation and replay protection). A second action — <em>bring up support access</em> — is the clean answer: the robot decides, logs it, and can refuse.</td></tr>
+    <tr><td>Set at commissioning</td><td>works today</td><td>Configure <code>robot-services.env</code> before the robot ships. Nobody has to reach it later.</td></tr>
+  </table></div>
+  <p class="cap">One flag: <code>privileged: true</code> on <code>lan-over-vpn</code> is a real
+  privilege — it exists because Docker blocks writes to host network sysctls otherwise. The service
+  writes nothing to the robot's filesystem and removes its iptables rules when stopped, which is the
+  right mitigation, but the word will come up in a security review. Know why it is there first.</p>
+
+  <h3>If the customer refuses everything</h3>
+  <p>Then you drive there, and that always works — no tunnel, no hub, no keys. It is the baseline
+  this whole system is measured against, so measure it:</p>
+  <div class="tw"><table>
+    <tr><th style="width:40%"></th><th style="width:30%">Drive to site</th><th>Session</th></tr>
+    <tr><td>Time to first look at the device</td><td>hours</td><td>~10 seconds</td></tr>
+    <tr><td>Cost per incident</td><td>travel + a person's day</td><td>~0</td></tr>
+    <tr><td>At 02:00 on a Sunday</td><td>no</td><td>yes</td></tr>
+    <tr><td>Ten sites in one morning</td><td>no</td><td>yes</td></tr>
+    <tr><td>Works with zero infrastructure</td><td><b>yes</b></td><td>no</td></tr>
+    <tr><td>Diagnose <em>before</em> deciding to drive</td><td>no</td><td><b>yes</b></td></tr>
+  </table></div>
+  <p>That last row holds even for customers who refuse everything: if you can look first, you often
+  do not have to drive at all — and when you do, you arrive knowing which part to bring.</p>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">08 — THE DELTA</span>Lab versus production</h2>
+
+  <h3>What does not change</h3>
+  <ul>
+    <li>The session pair and <code>network_mode: "service:vpn"</code></li>
+    <li>Traefik labels on the vpn container</li>
+    <li>The session manager's start / stop / audit logic</li>
+    <li>One credential per customer</li>
+  </ul>
+
+  <h3>What changes</h3>
+  <div class="tw"><table>
+    <tr><th style="width:34%">Where</th><th style="width:30%">Lab</th><th>Production</th></tr>
+    <tr><td><code>scripts/session-up.sh</code></td><td>rewrites <code>Endpoint</code> to <code>sb-wg-server:51820</code></td><td>keep the endpoint the config already carries</td></tr>
+    <tr><td>where the config comes from</td><td><code>lab/wg-config/peer_&lt;id&gt;/</code></td><td>Infisical, in memory, dies with the container</td></tr>
+    <tr><td><code>docker-compose.lab.yml</code></td><td>the pretend customer</td><td>not started at all</td></tr>
+    <tr><td><code>AllowedIPs</code></td><td><code>172.31.90.0/24</code></td><td>the site's real LAN CIDR, and nothing else</td></tr>
+    <tr><td>hostnames</td><td><code>console.sb.test</code> + hosts entries</td><td>a real domain with a real certificate</td></tr>
+    <tr><td>where it runs</td><td>a laptop</td><td>always-on host — <b>not the NAS</b>; one session wants most of 2 GB</td></tr>
+  </table></div>
+  <p class="cap"><code>sb_transit</code> needs no change: it is an ordinary bridge network, so it is
+  already the session's route out to a public hub.</p>
+</section>
+
+<hr class="div">
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">09 — NOT BUILT YET</span>Before a paying customer</h2>
+  <p class="dek">In order. Each one, missing, makes the system worse than the ad-hoc VPN it replaces.</p>
+
+  <div class="tw"><table>
+    <tr><th style="width:6%">#</th><th style="width:30%">What</th><th>Why it is that high</th></tr>
+    <tr><td>1</td><td>Auth on session URLs</td><td>Today a live session's browser answers anyone who can reach the host — an unauthenticated door into a customer network, open as long as the session is. See §05.</td></tr>
+    <tr><td>2</td><td>An idle reaper</td><td><code>SESSION_IDLE_MINUTES</code> exists in <code>.env.example</code> and nothing reads it. A forgotten session is a standing tunnel into a customer's network — the exact thing this design exists to abolish.</td></tr>
+    <tr><td>3</td><td>Credentials from Infisical</td><td>The lab writes the key to disk. Production fetches it at start, passes it in memory, and it dies with the container.</td></tr>
+    <tr><td>4</td><td>Isolation at the hub</td><td>A single flat hub puts every peer in one subnet and will forward between them. Restore the guarantee with per-peer firewall rules, or one WireGuard interface per customer — the latter makes it structural again.</td></tr>
+    <tr><td>5</td><td>A real host</td><td>Always-on, and roughly 8 GB for three concurrent sessions. A support tool that is asleep when a customer calls is not a support tool.</td></tr>
+    <tr><td>6</td><td>Names and certificates</td><td><code>console.sb.test</code> becomes a real domain. Session hostnames can stay internal — only staff reach them.</td></tr>
+    <tr><td>7</td><td>The audit log, somewhere real</td><td>A file inside the session manager container is evidence only until the container is recreated.</td></tr>
+  </table></div>
+
+  <div class="note gap">
+    <span class="h">Standing rule</span>
+    <p>Until item 1 is closed, <b>the lab must not hold a real customer credential.</b></p>
+  </div>
+
+  <h3>Open questions — verify, do not assume</h3>
+  <ul>
+    <li>Who administers the hub, may we add peers to it, and does it forward <em>between</em> peers?</li>
+    <li>Does the site's firewall permit outbound UDP 51820? Test this before demo day, not on it.</li>
+    <li>Overlapping LANs: two customers both on <code>192.168.1.0/24</code> collide at the hub. Fine for one site; decide the fix — a unique carrier subnet per site, 1:1 NATted at the gateway — before the second customer, not after.</li>
+    <li>Does <code>lan-over-vpn</code> handle a session reaching <em>in</em>, as opposed to the robot reaching <em>out</em>? The NAT direction should make it work. Untested.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Hub addresses in the config examples are placeholders. The real endpoint and tunnel subnet are
+  in <code>fleet-management/deploy/customers/…/robot-services.env</code>.</p>
+</footer>
+
+</div>
