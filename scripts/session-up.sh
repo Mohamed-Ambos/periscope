@@ -20,6 +20,11 @@ SRC_CONF="lab/wg-config/peer_${SESSION_ID}/peer_${SESSION_ID}.conf"
 # disk. Here it is a file, so the mechanism is visible.
 mkdir -p "session/conf"
 CONF="session/conf/${SESSION_ID}.conf"
+# The session manager runs as root and writes this file through the Docker
+# socket, so a leftover from a previous session is root-owned and a human
+# running this script by hand cannot overwrite it. Removing first works
+# either way: deletion needs write permission on the directory, not the file.
+rm -f "$CONF"
 sed "s/^Endpoint = .*/Endpoint = sb-wg-server:${WG_SERVER_PORT:-51820}/" "$SRC_CONF" > "$CONF"
 
 # Render this customer's device names from the registry. Static IPs, one JSON
