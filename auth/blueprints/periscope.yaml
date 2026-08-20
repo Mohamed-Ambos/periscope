@@ -3,39 +3,39 @@
 # automatically on start.
 version: 1
 metadata:
-  name: session-broker-console
+  name: periscope-console
 entries:
   # A forward-auth provider: Authentik answers Traefik's "may this request
   # through?" question rather than proxying the traffic itself.
   - model: authentik_providers_proxy.proxyprovider
     id: console-provider
     identifiers:
-      name: session-broker-console
+      name: periscope-console
     attrs:
-      name: session-broker-console
+      name: periscope-console
       # forward_single: protects exactly one hostname, the console.
       #
       # The domain matters more than the mode. With *.localhost the outpost set
       # a cookie for Domain=localhost — a single-label TLD, which browsers
       # reject — so no session cookie came back and every login failed with
-      # "invalid state". Under sb.test the cookie domain is registrable and the
+      # "invalid state". Under psc.test the cookie domain is registrable and the
       # login completes.
       #
       # forward_domain (one provider covering the console AND every session)
       # was tried here and returns 404 for every host; not resolved. Session
       # URLs therefore remain unauthenticated — see LAB-GUIDE.md.
       mode: forward_single
-      external_host: http://console.sb.test:8088
+      external_host: http://console.psc.test:8088
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
 
   - model: authentik_core.application
     id: console-app
     identifiers:
-      slug: session-broker
+      slug: periscope
     attrs:
       name: Session Manager
-      slug: session-broker
+      slug: periscope
       provider: !KeyOf console-provider
       meta_description: Start and stop disposable customer support sessions.
 
@@ -53,15 +53,15 @@ entries:
         # for a token with it server-side, AND the browser is redirected to it.
         # So one URL must work from both sides. It is the browser-facing name,
         # made resolvable inside the container by the extra_hosts entry on
-        # ak-server (auth.sb.test -> the Docker host, where :8088 is published).
+        # ak-server (auth.psc.test -> the Docker host, where :8088 is published).
         # Point it at an internal-only name and the browser cannot follow the
         # redirect; point it at a name the container cannot resolve and every
         # login ends in HTTP 400. Both were tried.
-        authentik_host: http://auth.sb.test:8088
+        authentik_host: http://auth.psc.test:8088
         # authentik_host_browser is where the *browser* is sent. It must be
         # the URL a human types. Left unset, the outpost redirects to its own
         # bind address (0.0.0.0:9000), which no browser can follow.
-        authentik_host_browser: http://auth.sb.test:8088
+        authentik_host_browser: http://auth.psc.test:8088
         authentik_host_insecure: true
         log_level: info
         object_naming_template: ak-outpost-%(name)s

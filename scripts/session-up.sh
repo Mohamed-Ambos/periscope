@@ -25,7 +25,7 @@ CONF="session/conf/${SESSION_ID}.conf"
 # running this script by hand cannot overwrite it. Removing first works
 # either way: deletion needs write permission on the directory, not the file.
 rm -f "$CONF"
-sed "s/^Endpoint = .*/Endpoint = sb-wg-server:${WG_SERVER_PORT:-51820}/" "$SRC_CONF" > "$CONF"
+sed "s/^Endpoint = .*/Endpoint = psc-wg-server:${WG_SERVER_PORT:-51820}/" "$SRC_CONF" > "$CONF"
 
 # Render this customer's device names from the registry. Static IPs, one JSON
 # file per customer — this is what replaces editing hosts files by hand.
@@ -53,7 +53,7 @@ WG_CONF="${HOST_DIR}/${CONF}" \
 DEV_HOSTS="${HOST_DIR}/${HOSTS_FILE}" \
 RESOLV_CONF="${HOST_DIR}/${RESOLV_FILE}" \
 LAB_DOMAIN="${LAB_DOMAIN:-localhost}" \
-docker compose -f session/docker-compose.session.yml -p "sb-session-${SESSION_ID}" up -d --build
+docker compose -f session/docker-compose.session.yml -p "psc-session-${SESSION_ID}" up -d --build
 
 echo
 echo "✓ session '${SESSION_ID}' is live"

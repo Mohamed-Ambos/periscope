@@ -226,7 +226,7 @@ footer{border-top:1px solid var(--rule); padding-top:24px; color:var(--ink-3); f
 <!-- ============================================================ -->
 <section>
   <h2><span class="num">02 — LOCALLY</span>What runs on the laptop today</h2>
-  <p class="dek">Everything is prefixed <code>sb-</code>. Only one part of this picture is a
+  <p class="dek">Everything is prefixed <code>psc-</code>. Only one part of this picture is a
   simulation; the session containers are production code, unchanged.</p>
 
   <figure>
@@ -241,7 +241,7 @@ footer{border-top:1px solid var(--rule); padding-top:24px; color:var(--ink-3); f
         <text x="24" y="44" class="svg-eyebrow">OURS — ALWAYS ON</text>
         <rect class="grp" x="24" y="56" width="600" height="130" rx="3"/>
 
-        <text x="330" y="50" class="svg-note">you open console.sb.test:8088</text>
+        <text x="330" y="50" class="svg-note">you open console.psc.test:8088</text>
         <line x1="319" y1="30" x2="319" y2="80" class="ln" marker-end="url(#a1)"/>
 
         <rect class="svg-box" x="44" y="84" width="170" height="56" rx="2"/>
@@ -303,14 +303,14 @@ footer{border-top:1px solid var(--rule); padding-top:24px; color:var(--ink-3); f
         <rect class="grp" x="680" y="244" width="316" height="240" rx="3"/>
 
         <rect class="svg-box" x="700" y="300" width="276" height="64" rx="2"/>
-        <text x="720" y="326" class="svg-label">sb-wg-server</text>
+        <text x="720" y="326" class="svg-label">psc-wg-server</text>
         <text x="720" y="346" class="svg-note">their firewall, or a box</text>
 
         <line x1="838" y1="368" x2="838" y2="400" class="ln" marker-end="url(#a1)"/>
-        <text x="852" y="390" class="svg-note">sb_customer_lan</text>
+        <text x="852" y="390" class="svg-note">psc_customer_lan</text>
 
         <rect class="svg-box" x="700" y="404" width="276" height="64" rx="2"/>
-        <text x="720" y="430" class="svg-label">sb-camera-01</text>
+        <text x="720" y="430" class="svg-label">psc-camera-01</text>
         <text x="720" y="450" class="svg-note">172.31.90.10 · self-signed</text>
       </svg>
     </div>
@@ -343,18 +343,18 @@ footer{border-top:1px solid var(--rule); padding-top:24px; color:var(--ink-3); f
   <h3>Three groups of containers</h3>
   <div class="tw"><table>
     <tr><th style="width:26%">Group</th><th style="width:37%">Containers</th><th>In production</th></tr>
-    <tr><td>Ours, always on</td><td><code>sb-traefik</code>, <code>sb-session-manager</code>, <code>sb-ak-*</code> (authentik)</td><td>The same, on a server</td></tr>
-    <tr><td>The pretend customer</td><td><code>sb-wg-server</code>, <code>sb-camera-01</code></td><td>Replaced by a real site — see §06</td></tr>
-    <tr><td>One session, per customer</td><td><code>sb-&lt;id&gt;-vpn</code>, <code>-resolver</code>, <code>-browser</code></td><td><b>Identical. Unchanged.</b></td></tr>
+    <tr><td>Ours, always on</td><td><code>psc-traefik</code>, <code>psc-session-manager</code>, <code>psc-ak-*</code> (authentik)</td><td>The same, on a server</td></tr>
+    <tr><td>The pretend customer</td><td><code>psc-wg-server</code>, <code>psc-camera-01</code></td><td>Replaced by a real site — see §06</td></tr>
+    <tr><td>One session, per customer</td><td><code>psc-&lt;id&gt;-vpn</code>, <code>-resolver</code>, <code>-browser</code></td><td><b>Identical. Unchanged.</b></td></tr>
   </table></div>
 
   <h3>Three networks</h3>
   <p>These are not containers and never appear in <code>docker ps</code>.</p>
   <div class="tw"><table>
     <tr><th style="width:26%">Network</th><th style="width:37%">Stands for</th><th>Attached</th></tr>
-    <tr><td><code>sb_customer_lan</code></td><td>the customer's LAN · <code>internal: true</code></td><td>wg-server, camera — <b>never a session</b></td></tr>
-    <tr><td><code>sb_transit</code></td><td>the public internet</td><td>wg-server, each session's vpn</td></tr>
-    <tr><td><code>sb_sessions</code></td><td>our internal network</td><td>Traefik, session manager, authentik, each session's vpn</td></tr>
+    <tr><td><code>psc_customer_lan</code></td><td>the customer's LAN · <code>internal: true</code></td><td>wg-server, camera — <b>never a session</b></td></tr>
+    <tr><td><code>psc_transit</code></td><td>the public internet</td><td>wg-server, each session's vpn</td></tr>
+    <tr><td><code>psc_sessions</code></td><td>our internal network</td><td>Traefik, session manager, authentik, each session's vpn</td></tr>
   </table></div>
 </section>
 
@@ -385,7 +385,7 @@ audit(<span class="c">"start"</span>, cid, r.returncode == 0)</code></pre></li>
       host</em>, so the session manager must pass the host's path, never its own <code>/project</code>.</p>
       <pre><code>SESSION_ID=<span class="c">"$SESSION_ID"</span> WG_CONF=<span class="c">"${HOST_DIR}/${CONF}"</span> \
 docker compose -f session/docker-compose.session.yml \
-  -p <span class="c">"sb-session-${SESSION_ID}"</span> up -d --build</code></pre></li>
+  -p <span class="c">"psc-session-${SESSION_ID}"</span> up -d --build</code></pre></li>
 
     <li><b>The vpn container starts and opens the tunnel.</b>
       <p>Its entrypoint runs <code>wg-quick up wg0</code>, which reads the mounted config, creates
@@ -397,7 +397,7 @@ docker compose -f session/docker-compose.session.yml \
 
     <li><b>Traefik notices the new container and routes to it.</b>
       <p>It is subscribed to Docker's event stream, reads the container's labels, and creates a
-      router for <code>customer2.sb.test</code> within a second. The page reloads and the row now
+      router for <code>customer2.psc.test</code> within a second. The page reloads and the row now
       shows <b>Stop</b> and <b>Open</b>.</p></li>
   </ol>
 
@@ -459,7 +459,7 @@ ip route      | sed 's/^/[vpn]   route: /'   <span class="c"># the audit line: o
 
 <span class="k">def</span> live():                       <span class="c"># no database anywhere — ask Docker</span>
     out = subprocess.run([<span class="c">"docker"</span>, <span class="c">"ps"</span>, <span class="c">"--filter"</span>, <span class="c">"name=-vpn"</span>, ...]).stdout
-    <span class="c"># sb-customer2-vpn → customer2</span>
+    <span class="c"># psc-customer2-vpn → customer2</span>
 
 <span class="k">def</span> audit(action, cid, ok):       <span class="c"># append-only, outside the session</span>
     fh.write(f<span class="c">'{now}\t{action}\t{cid}\t{"ok" if ok else "FAILED"}\n'</span>)</code></pre>
@@ -475,7 +475,7 @@ PrivateKey = &lt;this session's key&gt;
 
 [Peer]
 PublicKey  = &lt;the customer end's key&gt;
-Endpoint   = sb-wg-server:51820  <span class="c"># ← a container name. This is the lab-ism.</span>
+Endpoint   = psc-wg-server:51820  <span class="c"># ← a container name. This is the lab-ism.</span>
 AllowedIPs = 172.31.90.0/24      <span class="c"># route out AND filter in — one customer only</span></code></pre>
   <p class="cap"><code>AllowedIPs</code> does two jobs: outbound it becomes a route
   (<em>send this subnet down the tunnel</em>), inbound it is a filter (<em>accept nothing else from
@@ -559,11 +559,11 @@ AllowedIPs = 172.31.90.0/24      <span class="c"># route out AND filter in — o
 
   <div class="note gap">
     <span class="h">Known gap — not built</span>
-    <p>A live session's browser answers without a login: <code>curl -H 'Host: customer2.sb.test:8088' …</code>
+    <p>A live session's browser answers without a login: <code>curl -H 'Host: customer2.psc.test:8088' …</code>
     returns 200. authentik's <code>forward_single</code> mode covers exactly one hostname.
     <code>forward_domain</code> would cover the console <em>and</em> every session with one provider;
     it was tried twice — under <code>.localhost</code> the cookie is rejected outright (a single-label
-    TLD is a public suffix), and under <code>sb.test</code> the cookie is valid but the outpost still
+    TLD is a public suffix), and under <code>psc.test</code> the cookie is valid but the outpost still
     answers 404 for every host. <b>That second failure is unresolved — do not assume a real domain
     fixes it.</b></p>
     <p>The better answer, and the one on the roadmap: the session manager creates a provider <em>per session</em>
@@ -595,7 +595,7 @@ AllowedIPs = 172.31.90.0/24      <span class="c"># route out AND filter in — o
         <line x1="234" y1="90" x2="416" y2="90" class="ln" marker-end="url(#a3)"/>
         <text x="325" y="80" class="svg-mono" text-anchor="middle">dials in</text>
         <rect class="svg-box" x="420" y="60" width="220" height="60" rx="2"/>
-        <text x="530" y="96" class="svg-label" text-anchor="middle">sb-wg-server</text>
+        <text x="530" y="96" class="svg-label" text-anchor="middle">psc-wg-server</text>
         <text x="680" y="94" class="svg-note">possible only because we own both ends</text>
 
         <text x="60" y="186" class="svg-eyebrow">AT A REAL CUSTOMER</text>
@@ -911,14 +911,14 @@ AllowedIPs = 10.8.0.60/32</code></pre>
   <h3>What changes</h3>
   <div class="tw"><table>
     <tr><th style="width:34%">Where</th><th style="width:30%">Lab</th><th>Production</th></tr>
-    <tr><td><code>scripts/session-up.sh</code></td><td>rewrites <code>Endpoint</code> to <code>sb-wg-server:51820</code></td><td>keep the endpoint the config already carries</td></tr>
+    <tr><td><code>scripts/session-up.sh</code></td><td>rewrites <code>Endpoint</code> to <code>psc-wg-server:51820</code></td><td>keep the endpoint the config already carries</td></tr>
     <tr><td>where the config comes from</td><td><code>lab/wg-config/peer_&lt;id&gt;/</code></td><td>Infisical, in memory, dies with the container</td></tr>
     <tr><td><code>docker-compose.lab.yml</code></td><td>the pretend customer</td><td>not started at all</td></tr>
     <tr><td><code>AllowedIPs</code></td><td><code>172.31.90.0/24</code></td><td>the site's real LAN CIDR, and nothing else</td></tr>
-    <tr><td>hostnames</td><td><code>console.sb.test</code> + hosts entries</td><td>a real domain with a real certificate</td></tr>
+    <tr><td>hostnames</td><td><code>console.psc.test</code> + hosts entries</td><td>a real domain with a real certificate</td></tr>
     <tr><td>where it runs</td><td>a laptop</td><td>always-on host — <b>not the NAS</b>; one session wants most of 2 GB</td></tr>
   </table></div>
-  <p class="cap"><code>sb_transit</code> needs no change: it is an ordinary bridge network, so it is
+  <p class="cap"><code>psc_transit</code> needs no change: it is an ordinary bridge network, so it is
   already the session's route out to a public hub.</p>
 </section>
 
@@ -936,7 +936,7 @@ AllowedIPs = 10.8.0.60/32</code></pre>
     <tr><td>3</td><td>Credentials from Infisical</td><td>The lab writes the key to disk. Production fetches it at start, passes it in memory, and it dies with the container.</td></tr>
     <tr><td>4</td><td>Isolation at the hub</td><td>A single flat hub puts every peer in one subnet and will forward between them. Restore the guarantee with per-peer firewall rules, or one WireGuard interface per customer — the latter makes it structural again.</td></tr>
     <tr><td>5</td><td>A real host</td><td>Always-on, and roughly 8 GB for three concurrent sessions. A support tool that is asleep when a customer calls is not a support tool.</td></tr>
-    <tr><td>6</td><td>Names and certificates</td><td><code>console.sb.test</code> becomes a real domain. Session hostnames can stay internal — only staff reach them.</td></tr>
+    <tr><td>6</td><td>Names and certificates</td><td><code>console.psc.test</code> becomes a real domain. Session hostnames can stay internal — only staff reach them.</td></tr>
     <tr><td>7</td><td>The audit log, somewhere real</td><td>A file inside the session manager container is evidence only until the container is recreated.</td></tr>
   </table></div>
 

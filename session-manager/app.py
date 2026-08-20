@@ -50,7 +50,7 @@ def live():
         if not line.strip():
             continue
         name, _, status = line.partition("\t")
-        if name.startswith("sb-") and name.endswith("-vpn"):
+        if name.startswith("psc-") and name.endswith("-vpn"):
             sessions[name[3:-4]] = status
     return sessions
 

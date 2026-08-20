@@ -15,29 +15,29 @@ Everything below is a command you can run and a result you can look at.
 
 | In the lab | In real life |
 |---|---|
-| `sb-camera-01` — nginx with a self-signed cert | An Axis camera at a customer |
-| `sb-wg-server` — WireGuard endpoint | The customer's firewall, or a box we place |
-| `sb-session-manager` — the console with the buttons | The same thing, on our server |
-| `sb-traefik` | The same thing, on our server |
-| `sb-ak-*` — authentik, Postgres, Redis | The same thing, on our server |
-| `sb-<customer>-vpn` + `-resolver` + `-browser` | Exactly the same, unchanged |
+| `psc-camera-01` — nginx with a self-signed cert | An Axis camera at a customer |
+| `psc-wg-server` — WireGuard endpoint | The customer's firewall, or a box we place |
+| `psc-session-manager` — the console with the buttons | The same thing, on our server |
+| `psc-traefik` | The same thing, on our server |
+| `psc-ak-*` — authentik, Postgres, Redis | The same thing, on our server |
+| `psc-<customer>-vpn` + `-resolver` + `-browser` | Exactly the same, unchanged |
 
 **Networks** (`docker network ls` — these are *not* containers, which is why they
 never appear in `docker ps`):
 
 | Network | Represents | Attached to |
 |---|---|---|
-| `sb_customer_lan` | The customer's private LAN (`internal=true`) | `sb-wg-server`, `sb-camera-01` — **never a session** |
-| `sb_transit` | The public internet between us and them | `sb-wg-server`, each session's `vpn` |
-| `sb_sessions` | Our own internal network | Traefik, session manager, authentik, each session's `vpn` |
+| `psc_customer_lan` | The customer's private LAN (`internal=true`) | `psc-wg-server`, `psc-camera-01` — **never a session** |
+| `psc_transit` | The public internet between us and them | `psc-wg-server`, each session's `vpn` |
+| `psc_sessions` | Our own internal network | Traefik, session manager, authentik, each session's `vpn` |
 
 Check it yourself:
 
 ```bash
-docker network ls | grep sb_
-docker network inspect sb_customer_lan -f '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{println}}{{end}}'
-# → sb-wg-server 172.31.90.2/24
-# → sb-camera-01 172.31.90.10/24     ← and nothing else, ever
+docker network ls | grep psc_
+docker network inspect psc_customer_lan -f '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{println}}{{end}}'
+# → psc-wg-server 172.31.90.2/24
+# → psc-camera-01 172.31.90.10/24     ← and nothing else, ever
 ```
 
 The session containers are **not** a simulation. What runs here is what would
@@ -48,18 +48,18 @@ run in production.
 ## 2. Start it
 
 ```bash
-cd ~/session-broker
+cd ~/periscope
 cp .env.example .env             # first time only, then fill in the secrets
 ./scripts/hosts-entries.sh       # prints one sudo command — run it
 ./scripts/lab-up.sh
 ./scripts/auth-up.sh             # first boot migrates a database, ~3 min
 ```
 
-> **Why `sb.test` and not `localhost`?** Browsers resolve `*.localhost`
+> **Why `psc.test` and not `localhost`?** Browsers resolve `*.localhost`
 > automatically, which is convenient — but they **reject a cookie scoped to
 > `localhost`**, because a single-label TLD is treated as a public suffix.
 > authentik's outpost needs exactly that cookie to track the login, so every
-> attempt died with *"invalid state"*. `sb.test` is registrable under the
+> attempt died with *"invalid state"*. `psc.test` is registrable under the
 > unknown-TLD rule, the cookie is accepted, and the login completes. The cost
 > is one line in `/etc/hosts`.
 
@@ -68,7 +68,7 @@ WireGuard identity per customer. Takes a minute the first time.
 
 Now open the console:
 
-**<http://console.sb.test:8088/>**
+**<http://console.psc.test:8088/>**
 
 You should see two customers, both stopped. Nothing is connected yet — that is
 the normal state of the whole system.
@@ -104,8 +104,8 @@ Each of these is a thing you can check yourself rather than take on faith.
 ### The browser has no network of its own
 
 ```bash
-docker inspect sb-customer2-browser -f '{{.HostConfig.NetworkMode}}'
-docker inspect sb-customer2-browser -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
+docker inspect psc-customer2-browser -f '{{.HostConfig.NetworkMode}}'
+docker inspect psc-customer2-browser -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
 ```
 
 The first prints `container:<id>` — it is living inside the VPN container's
@@ -116,16 +116,16 @@ own. This is the isolation guarantee, and it is one line of compose.
 
 ```bash
 # with the tunnel up
-docker exec sb-customer2-vpn curl -sk -o /dev/null -w '%{http_code}\n' https://172.31.90.10/
+docker exec psc-customer2-vpn curl -sk -o /dev/null -w '%{http_code}\n' https://172.31.90.10/
 # → 200
 
 # take the tunnel down
-docker exec sb-customer2-vpn wg-quick down wg0
-docker exec sb-customer2-vpn curl -sk --max-time 5 https://172.31.90.10/
+docker exec psc-customer2-vpn wg-quick down wg0
+docker exec psc-customer2-vpn curl -sk --max-time 5 https://172.31.90.10/
 # → hangs, then fails. The camera is gone.
 
 # bring it back
-docker exec sb-customer2-vpn wg-quick up wg0
+docker exec psc-customer2-vpn wg-quick up wg0
 ```
 
 Refresh the Firefox tab while the tunnel is down — the camera is unreachable
@@ -134,7 +134,7 @@ there too, because the browser shares that network.
 ### Only the customer's subnet goes over the tunnel
 
 ```bash
-docker exec sb-customer2-vpn ip route
+docker exec psc-customer2-vpn ip route
 ```
 
 ```
@@ -148,15 +148,15 @@ route into their network.
 ### The session is not on the customer's network
 
 ```bash
-docker inspect sb-customer2-vpn -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}'
-# → sb_sessions sb_transit        (never sb_customer_lan)
+docker inspect psc-customer2-vpn -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}'
+# → psc_sessions psc_transit        (never psc_customer_lan)
 ```
 
 ### Two customers cannot see each other
 
 ```bash
-docker exec sb-session-manager true 2>/dev/null   # start customer7 from the console too
-docker exec sb-customer2-vpn ping -c1 -W2 10.13.13.3   # customer7's tunnel address
+docker exec psc-session-manager true 2>/dev/null   # start customer7 from the console too
+docker exec psc-customer2-vpn ping -c1 -W2 10.13.13.3   # customer7's tunnel address
 # → fails
 ```
 
@@ -188,11 +188,11 @@ cat session-manager/audit.log
 The console is no longer open. Visiting it redirects you to a login page.
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: console.sb.test:8088' http://127.0.0.1:8088/
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: console.psc.test:8088' http://127.0.0.1:8088/
 # → 302   (redirected to authentik)
 ```
 
-In a browser, go to **<http://console.sb.test:8088/>**. You land on authentik.
+In a browser, go to **<http://console.psc.test:8088/>**. You land on authentik.
 Sign in with the admin account created on first boot:
 
 | | |
@@ -204,13 +204,13 @@ After logging in you are returned to the console. The session cookie lasts, so
 you only do this once per browser.
 
 **Add MFA** (this is the point of using authentik at all): log into
-<http://auth.sb.test:8088/>, go to *Directory → Users → akadmin*, and enrol a
+<http://auth.psc.test:8088/>, go to *Directory → Users → akadmin*, and enrol a
 TOTP authenticator. Then log out and back in to see it enforced.
 
 ### Known gap: session URLs are not protected yet
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: customer2.sb.test:8088' http://127.0.0.1:8088/
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: customer2.psc.test:8088' http://127.0.0.1:8088/
 # → 200   ← no login required
 ```
 
@@ -220,7 +220,7 @@ must be fixed before anything real.** The cause is specific and worth knowing:
 - authentik's `forward_single` mode protects exactly **one** hostname — the console.
 - `forward_domain` would protect the console *and* every session host with one
   provider. It was tried twice: first under `.localhost`, where it failed because
-  a cookie cannot be scoped to a single-label TLD; then under `sb.test`, where the
+  a cookie cannot be scoped to a single-label TLD; then under `psc.test`, where the
   cookie domain is valid but the outpost still answers 404 for every host. That
   second failure is **unresolved** — do not assume switching domains fixes it.
 
@@ -239,8 +239,8 @@ in at all*.
 ./scripts/session-down.sh customer2  # destroy it
 ./scripts/lab-down.sh                # remove everything, including volumes
 
-docker logs sb-customer2-vpn         # tunnel bring-up and routes
-docker exec sb-customer2-vpn wg show # handshake, transfer counters
+docker logs psc-customer2-vpn         # tunnel bring-up and routes
+docker exec psc-customer2-vpn wg show # handshake, transfer counters
 ```
 
 Traefik's dashboard is at <http://localhost:8089/> if you want to watch routers
@@ -306,7 +306,7 @@ hard maximum lifetime, because a forgotten session is a standing tunnel into a
 customer's network — the exact thing this design exists to prevent.
 
 **4. Real names and real certificates.**
-`console.sb.test` becomes `console.ambos-security.com` with a proper
+`console.psc.test` becomes `console.ambos-security.com` with a proper
 certificate. Sessions can stay on internal names since only staff reach them.
 
 **5. The customer's VPN, not ours.**
@@ -344,7 +344,7 @@ support tool.
 ## 8. Where the pieces live
 
 ```
-session-broker/
+periscope/
 ├── docker-compose.console.yml   # OUR side: Traefik + session manager
 ├── docker-compose.lab.yml       # the fake customer: VPN endpoint + camera
 ├── session/

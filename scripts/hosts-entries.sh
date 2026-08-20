@@ -4,12 +4,12 @@
 # Why not *.localhost? Browsers resolve it automatically, but they REJECT a
 # cookie scoped to "localhost" (a single-label TLD), and authentik's outpost
 # needs exactly that cookie. Every login failed with "invalid state" until the
-# lab moved to sb.test.
+# lab moved to psc.test.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck disable=SC1091
 [ -f .env ] && . ./.env
-D="${LAB_DOMAIN:-sb.test}"
+D="${LAB_DOMAIN:-psc.test}"
 NAMES="console.$D auth.$D"
 for f in session-manager/devices/*.json; do
   [ -e "$f" ] || continue

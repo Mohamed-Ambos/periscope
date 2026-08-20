@@ -1,4 +1,4 @@
-# session-broker
+# periscope
 
 A working lab for **on-demand support sessions**: a customer calls, an engineer
 clicks one button, a disposable container dials into that customer's network and
@@ -11,7 +11,7 @@ cp .env.example .env
 ./scripts/hosts-entries.sh   # prints the one sudo command you need
 ./scripts/lab-up.sh
 ./scripts/auth-up.sh          # login layer (first boot takes ~3 min)
-open http://console.sb.test:8088/
+open http://console.psc.test:8088/
 ```
 
 **→ [docs/session-lab-walkthrough.html](docs/session-lab-walkthrough.html)** — illustrated: every container, what it represents in real life, and how the pieces connect.

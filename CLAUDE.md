@@ -13,7 +13,7 @@ It is a **prototype, not production**. It runs on a laptop and deliberately
 simulates the customer side. The session containers themselves are real — what
 runs here is what would run in production, unchanged.
 
-**Repository:** `github.com/Mohamed-Ambos/session-broker` — public, personal
+**Repository:** `github.com/Mohamed-Ambos/periscope` — public, personal
 account, deliberately **outside** the company organisation.
 
 ## Who this is for and why it exists
@@ -66,32 +66,32 @@ cp .env.example .env             # fill in secrets: openssl rand -base64 48
 ./scripts/lab-down.sh                # remove everything including volumes
 ```
 
-Console: `http://console.sb.test:8088/` &middot; authentik: `http://auth.sb.test:8088/`
+Console: `http://console.psc.test:8088/` &middot; authentik: `http://auth.psc.test:8088/`
 &middot; Traefik dashboard: `http://localhost:8089/`
 
 Log in as `akadmin`, password from `AK_ADMIN_PASSWORD` in `.env`.
 
 ## Architecture
 
-Three groups of containers. Names are prefixed `sb-`.
+Three groups of containers. Names are prefixed `psc-`.
 
-**Ours (always on)** — `sb-traefik`, `sb-session-manager`, `sb-ak-server`,
-`sb-ak-worker`, `sb-ak-db`, `sb-ak-redis`.
+**Ours (always on)** — `psc-traefik`, `psc-session-manager`, `psc-ak-server`,
+`psc-ak-worker`, `psc-ak-db`, `psc-ak-redis`.
 
-**The simulated customer (the only pretend part)** — `sb-wg-server` (their
-firewall or a box we place), `sb-camera-01` (nginx with a self-signed cert,
+**The simulated customer (the only pretend part)** — `psc-wg-server` (their
+firewall or a box we place), `psc-camera-01` (nginx with a self-signed cert,
 because that is what a real camera serves).
 
-**One session, per customer, ephemeral** — `sb-<id>-vpn`, `sb-<id>-resolver`,
-`sb-<id>-browser`.
+**One session, per customer, ephemeral** — `psc-<id>-vpn`, `psc-<id>-resolver`,
+`psc-<id>-browser`.
 
 Three **networks** (these are not containers and never appear in `docker ps`):
 
 | Network | Represents | Attached |
 |---|---|---|
-| `sb_customer_lan` | the customer's LAN, `internal=true` | `sb-wg-server`, `sb-camera-01` — **never a session** |
-| `sb_transit` | the public internet | `sb-wg-server`, each session's `vpn` |
-| `sb_sessions` | our internal network | Traefik, session manager, authentik, each session's `vpn` |
+| `psc_customer_lan` | the customer's LAN, `internal=true` | `psc-wg-server`, `psc-camera-01` — **never a session** |
+| `psc_transit` | the public internet | `psc-wg-server`, each session's `vpn` |
+| `psc_sessions` | our internal network | Traefik, session manager, authentik, each session's `vpn` |
 
 ### The one idea that matters
 
@@ -105,8 +105,8 @@ them no IP. They borrow the vpn container's namespace, so they can reach
 exactly what the tunnel reaches and nothing else. Verify:
 
 ```bash
-docker inspect sb-customer2-browser -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'   # empty
-docker exec sb-customer2-vpn ip route      # only 172.31.90.0/24 dev wg0
+docker inspect psc-customer2-browser -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'   # empty
+docker exec psc-customer2-vpn ip route      # only 172.31.90.0/24 dev wg0
 ```
 
 ### Traefik labels go on the vpn container
@@ -134,7 +134,7 @@ public key and the newer handshake steals the older tunnel.
 **`.localhost` cannot be used.** Browsers resolve `*.localhost` automatically,
 which is tempting — but they **reject cookies scoped to `localhost`** because a
 single-label TLD is a public suffix. authentik's outpost needs that cookie, so
-every login died with *"invalid state"*. Hence `sb.test` plus `/etc/hosts`.
+every login died with *"invalid state"*. Hence `psc.test` plus `/etc/hosts`.
 
 **`authentik_host` is used from both sides.** The outpost trades the login code
 for a token with it *server-side*, and the *browser* is redirected to it. An
@@ -169,7 +169,7 @@ for.
 
 **The gap that matters:** a live session's browser is reachable without logging
 in. `forward_single` covers one hostname. `forward_domain` was tried twice —
-under `.localhost` (cookie rejected) and under `sb.test` (cookie fine, outpost
+under `.localhost` (cookie rejected) and under `psc.test` (cookie fine, outpost
 still 404s for every host) — and the second failure is **unresolved**. The
 better production answer is for the session manager to create a provider per session via
 authentik's API, which also allows *which engineer may open which customer*.

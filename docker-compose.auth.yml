@@ -5,12 +5,12 @@
 # Authentik about every request (forward auth); an unauthenticated one is
 # redirected to the login page instead of reaching the session manager.
 # ---------------------------------------------------------------------------
-name: sb-auth
+name: psc-auth
 
 services:
   ak-db:
     image: postgres:16-alpine
-    container_name: sb-ak-db
+    container_name: psc-ak-db
     environment:
       POSTGRES_USER: authentik
       POSTGRES_PASSWORD: ${AK_DB_PASSWORD:?set AK_DB_PASSWORD in .env}
@@ -27,7 +27,7 @@ services:
 
   ak-redis:
     image: redis:7-alpine
-    container_name: sb-ak-redis
+    container_name: psc-ak-redis
     command: --save 60 1 --loglevel warning
     volumes:
       - ak-redis:/data
@@ -41,7 +41,7 @@ services:
 
   ak-server:
     image: ghcr.io/goauthentik/server:2024.12
-    container_name: sb-ak-server
+    container_name: psc-ak-server
     command: server
     environment: &ak-env
       AUTHENTIK_SECRET_KEY: ${AK_SECRET_KEY:?set AK_SECRET_KEY in .env}
@@ -67,12 +67,12 @@ services:
     extra_hosts:
       # Lets the outpost resolve its own browser-facing URL from inside the
       # container: out to the Docker host, back in through Traefik on :8088.
-      - "auth.${LAB_DOMAIN:-sb.test}:host-gateway"
+      - "auth.${LAB_DOMAIN:-psc.test}:host-gateway"
     labels:
       - traefik.enable=true
-      - traefik.docker.network=sb_sessions
+      - traefik.docker.network=psc_sessions
       # 1. The login UI itself.
-      - traefik.http.routers.ak.rule=Host(`auth.${LAB_DOMAIN:-sb.test}`)
+      - traefik.http.routers.ak.rule=Host(`auth.${LAB_DOMAIN:-psc.test}`)
       - traefik.http.routers.ak.entrypoints=web
       - traefik.http.services.ak.loadbalancer.server.port=9000
       # 2. The outpost endpoints, served under EVERY protected host. Without
@@ -90,11 +90,11 @@ services:
 
   ak-worker:
     image: ghcr.io/goauthentik/server:2024.12
-    container_name: sb-ak-worker
+    container_name: psc-ak-worker
     command: worker
     environment: *ak-env
     extra_hosts:
-      - "auth.${LAB_DOMAIN:-sb.test}:host-gateway"
+      - "auth.${LAB_DOMAIN:-psc.test}:host-gateway"
     user: root
     volumes:
       - ./auth/blueprints:/blueprints/custom:ro
@@ -113,5 +113,5 @@ volumes:
 
 networks:
   sessions:
-    name: sb_sessions
+    name: psc_sessions
     external: true

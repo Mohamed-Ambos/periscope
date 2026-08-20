@@ -12,7 +12,7 @@ SESSION_ID="${1:?usage: session-down.sh <customer-id>}"
 if SESSION_ID="$SESSION_ID" \
    WG_CONF=/dev/null DEV_HOSTS=/dev/null RESOLV_CONF=/dev/null \
    docker compose -f session/docker-compose.session.yml \
-     -p "sb-session-${SESSION_ID}" down -v --remove-orphans; then
+     -p "psc-session-${SESSION_ID}" down -v --remove-orphans; then
   ok=1
 else
   ok=0
@@ -24,11 +24,11 @@ rm -f "session/conf/${SESSION_ID}.conf" \
 
 # Say what actually happened. A session that outlives its own teardown is the
 # one failure this design cannot tolerate quietly.
-left=$(docker ps -aq --filter "name=sb-${SESSION_ID}-" | wc -l)
+left=$(docker ps -aq --filter "name=psc-${SESSION_ID}-" | wc -l)
 if [ "$ok" = 1 ] && [ "$left" -eq 0 ]; then
   echo "✓ session '${SESSION_ID}' destroyed"
 else
   echo "✗ session '${SESSION_ID}' NOT fully destroyed — ${left} container(s) remain" >&2
-  docker ps -a --filter "name=sb-${SESSION_ID}-" --format '    {{.Names}}  {{.Status}}' >&2
+  docker ps -a --filter "name=psc-${SESSION_ID}-" --format '    {{.Names}}  {{.Status}}' >&2
   exit 1
 fi

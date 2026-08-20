@@ -16,7 +16,7 @@ for _ in $(seq 1 30); do
 done
 
 if [ -z "$(ls -d lab/wg-config/peer_* 2>/dev/null)" ]; then
-  echo "✗ peer config never appeared — check: docker logs sb-wg-server" >&2
+  echo "✗ peer config never appeared — check: docker logs psc-wg-server" >&2
   exit 1
 fi
 
