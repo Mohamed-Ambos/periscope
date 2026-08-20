@@ -16,6 +16,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 PROJECT = os.environ.get("PROJECT_DIR", "/project")
 DOMAIN = os.environ.get("LAB_DOMAIN", "localhost")
 PORT = os.environ.get("TRAEFIK_HTTP_PORT", "8088")
+PREFIX = "psc-"
+SUFFIX = "-vpn"
 AUDIT = os.path.join(PROJECT, "session-manager", "audit.log")
 
 app = FastAPI(title="Session Manager")
@@ -50,8 +52,10 @@ def live():
         if not line.strip():
             continue
         name, _, status = line.partition("\t")
-        if name.startswith("psc-") and name.endswith("-vpn"):
-            sessions[name[3:-4]] = status
+        if name.startswith(PREFIX) and name.endswith(SUFFIX):
+            # Derive the id by name, not by offset: a hardcoded slice silently
+            # returns the wrong key the moment the prefix changes length.
+            sessions[name.removeprefix(PREFIX).removesuffix(SUFFIX)] = status
     return sessions
 
 
