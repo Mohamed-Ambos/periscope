@@ -11,7 +11,7 @@ cd "$(dirname "$0")/.."
 [ -f .env ] && . ./.env
 D="${LAB_DOMAIN:-sb.test}"
 NAMES="console.$D auth.$D"
-for f in broker/devices/*.json; do
+for f in session-manager/devices/*.json; do
   [ -e "$f" ] || continue
   NAMES="$NAMES $(basename "$f" .json).$D"
 done

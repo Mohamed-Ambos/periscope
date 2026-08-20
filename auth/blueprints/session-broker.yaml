@@ -34,7 +34,7 @@ entries:
     identifiers:
       slug: session-broker
     attrs:
-      name: Session Broker
+      name: Session Manager
       slug: session-broker
       provider: !KeyOf console-provider
       meta_description: Start and stop disposable customer support sessions.

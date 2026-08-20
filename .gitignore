@@ -7,7 +7,7 @@ session/conf/
 session/vpn/wg0.conf
 
 # Runtime
-broker/audit.log
+session-manager/audit.log
 *.log
 session/*.hosts
 session/*.resolv.conf

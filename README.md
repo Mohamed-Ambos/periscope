@@ -24,7 +24,7 @@ own eyes, and what has to change before a real customer.
 Pretend: the camera, the customer LAN, their VPN endpoint, the internet between us.
 
 Real, and unchanged in production: the session pair (`vpn` + `browser`), the
-`network_mode: service:vpn` isolation, the Traefik routing, the broker's
+`network_mode: service:vpn` isolation, the Traefik routing, the session manager's
 start/stop/audit logic.
 
 ## Status
@@ -33,7 +33,7 @@ start/stop/audit logic.
 |---|---|
 | Session pair, tunnel, isolation | Working, verified |
 | Traefik routing per session | Working |
-| Broker console: list / connect / stop / audit | Working |
+| Session manager console: list / connect / stop / audit | Working |
 | Authentik in front of the console | Working — login enforced, MFA available |
 | Auth on session URLs | **Not built** — needs a real domain, see LAB-GUIDE §4b |
 | Credentials from Infisical | **Not built** — lab uses files |

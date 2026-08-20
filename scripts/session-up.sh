@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Starts one session for one customer. This is what the broker will call.
+# Starts one session for one customer. This is what the session manager will call.
 #
 #   ./scripts/session-up.sh customer2
 set -euo pipefail
@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 SESSION_ID="${1:?usage: session-up.sh <customer-id>}"
 
 # Bind-mount sources are resolved by the Docker daemon on the HOST. When the
-# broker calls this script it runs inside a container where the project is at
+# session manager calls this script it runs inside a container where the project is at
 # /project — passing that path would mount something that does not exist.
 HOST_DIR="${HOST_PROJECT_DIR:-$(pwd)}"
 SRC_CONF="lab/wg-config/peer_${SESSION_ID}/peer_${SESSION_ID}.conf"
@@ -24,7 +24,7 @@ sed "s/^Endpoint = .*/Endpoint = sb-wg-server:${WG_SERVER_PORT:-51820}/" "$SRC_C
 
 # Render this customer's device names from the registry. Static IPs, one JSON
 # file per customer — this is what replaces editing hosts files by hand.
-DEV_JSON="broker/devices/${SESSION_ID}.json"
+DEV_JSON="session-manager/devices/${SESSION_ID}.json"
 HOSTS_FILE="session/conf/${SESSION_ID}.hosts"
 RESOLV_FILE="session/conf/${SESSION_ID}.resolv.conf"
 if [ -f "$DEV_JSON" ]; then

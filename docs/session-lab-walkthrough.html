@@ -1,4 +1,4 @@
-<title>Session Broker Lab</title>
+<title>Session Manager Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Sans+3:wght@400;600&display=swap">
@@ -119,7 +119,7 @@
 
 <header class="masthead">
   <p class="eyebrow">Built and running &middot; 18 August 2026</p>
-  <h1>Session Broker Lab</h1>
+  <h1>Session Manager Lab</h1>
   <p class="standfirst">Thirteen containers on one laptop. Six are ours, two pretend to be a customer, and three appear only while an engineer is working. Here is what each one is, and what it stands for in real life.</p>
 </header>
 
@@ -143,7 +143,7 @@
       <tbody>
         <tr><td colspan="3" class="grp">Our server &mdash; always on</td></tr>
         <tr><td class="name">sb-traefik</td><td>Traefik v3.3</td><td>The front door. Every request from an engineer arrives here and is routed by hostname. Identical in production.</td></tr>
-        <tr><td class="name">sb-broker</td><td>The console &mdash; FastAPI + Docker CLI</td><td>The page with the customer list and the Connect button. Starts and destroys sessions, and writes the audit log.</td></tr>
+        <tr><td class="name">sb-session-manager</td><td>The console &mdash; FastAPI + Docker CLI</td><td>The page with the customer list and the Connect button. Starts and destroys sessions, and writes the audit log.</td></tr>
         <tr><td class="name">sb-ak-server</td><td>authentik</td><td>Login and MFA. Traefik asks it about every request to the console before letting it through.</td></tr>
         <tr><td class="name">sb-ak-worker</td><td>authentik background worker</td><td>Applies configuration and runs scheduled work. Same in production.</td></tr>
         <tr><td class="name">sb-ak-db</td><td>PostgreSQL 16</td><td>authentik's database &mdash; users, groups, applications.</td></tr>
@@ -173,7 +173,7 @@
   </div>
 
   <figure>
-    <svg viewBox="0 0 900 470" role="img" aria-label="System layout: an engineer authenticates through Traefik and authentik to reach the broker console, which starts a three-container session that tunnels to the simulated customer network and reaches the camera.">
+    <svg viewBox="0 0 900 470" role="img" aria-label="System layout: an engineer authenticates through Traefik and authentik to reach the session manager console, which starts a three-container session that tunnels to the simulated customer network and reaches the camera.">
       <defs>
         <marker id="w1-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker>
@@ -202,7 +202,7 @@
       <text x="297" y="204" class="svg-note" text-anchor="middle">sb-ak-worker</text>
 
       <rect x="36" y="180" width="150" height="56" rx="7" class="box-accent"/>
-      <text x="111" y="204" class="svg-title" text-anchor="middle">sb-broker</text>
+      <text x="111" y="204" class="svg-title" text-anchor="middle">sb-session-manager</text>
       <text x="111" y="222" class="svg-note" text-anchor="middle">the console</text>
 
       <path d="M 111 114 L 111 174" class="flow-accent" marker-end="url(#w1-ar-a)"/>
@@ -210,7 +210,7 @@
       <path d="M 194 74 L 214 74" class="flow" marker-end="url(#w1-ar)"/>
       <text x="204" y="44" class="svg-label" text-anchor="middle">1 &mdash; may this through?</text>
 
-      <text x="16" y="344" class="svg-eyebrow">ONE SESSION &mdash; STARTED BY THE BROKER, DESTROYED WITH IT</text>
+      <text x="16" y="344" class="svg-eyebrow">ONE SESSION &mdash; STARTED BY THE SESSION MANAGER, DESTROYED WITH IT</text>
       <rect x="16" y="354" width="452" height="100" rx="10" class="grp-live" fill-opacity=".35"/>
       <rect x="36" y="374" width="128" height="60" rx="6" class="box"/>
       <text x="100" y="398" class="svg-note" text-anchor="middle">sb-customer2-</text>
@@ -320,7 +320,7 @@
 
       <rect x="16" y="52" width="228" height="140" rx="8" class="box"/>
       <text x="130" y="80" class="svg-title" text-anchor="middle">device registry</text>
-      <text x="130" y="100" class="svg-note" text-anchor="middle">broker/devices/</text>
+      <text x="130" y="100" class="svg-note" text-anchor="middle">session-manager/devices/</text>
       <text x="130" y="117" class="svg-note" text-anchor="middle">customer2.json</text>
       <line x1="38" y1="130" x2="222" y2="130" stroke="var(--rule)"/>
       <text x="38" y="152" class="svg-mono">camera-01 → .10</text>
@@ -354,7 +354,7 @@
     <figcaption>Adding a device is one line of JSON. The next session started for that customer resolves it; no other machine on earth needs to know.</figcaption>
   </figure>
 
-  <pre><code><span class="c">// broker/devices/customer2.json</span>
+  <pre><code><span class="c">// session-manager/devices/customer2.json</span>
 {
   <span class="k">"customer"</span>: <span class="s">"customer2"</span>,
   <span class="k">"domain"</span>:   <span class="s">"acme.internal"</span>,
@@ -440,7 +440,7 @@ $ docker exec sb-customer2-browser getent hosts github.com     <span class="c">#
   <pre><code>git clone https://github.com/Mohamed-Ambos/session-broker
 cd session-broker &amp;&amp; cp .env.example .env    <span class="c"># then fill in the secrets</span>
 
-./scripts/lab-up.sh      <span class="c"># traefik, broker, fake customer, wireguard identities</span>
+./scripts/lab-up.sh      <span class="c"># traefik, session manager, fake customer, wireguard identities</span>
 ./scripts/auth-up.sh     <span class="c"># authentik — first boot migrates a database, ~3 min</span>
 
 <span class="c"># log in at http://console.localhost:8088/  (akadmin / AK_ADMIN_PASSWORD)</span>

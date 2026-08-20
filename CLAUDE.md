@@ -58,7 +58,7 @@ support access and customer daily access should not be conflated.
 ```bash
 cp .env.example .env             # fill in secrets: openssl rand -base64 48
 ./scripts/hosts-entries.sh       # prints the one sudo command needed
-./scripts/lab-up.sh              # traefik + broker + fake customer + wg identities
+./scripts/lab-up.sh              # traefik + session manager + fake customer + wg identities
 ./scripts/auth-up.sh             # authentik; first boot migrates a DB, ~3 min
 
 ./scripts/session-up.sh customer2    # what the Connect button calls
@@ -75,7 +75,7 @@ Log in as `akadmin`, password from `AK_ADMIN_PASSWORD` in `.env`.
 
 Three groups of containers. Names are prefixed `sb-`.
 
-**Ours (always on)** — `sb-traefik`, `sb-broker`, `sb-ak-server`,
+**Ours (always on)** — `sb-traefik`, `sb-session-manager`, `sb-ak-server`,
 `sb-ak-worker`, `sb-ak-db`, `sb-ak-redis`.
 
 **The simulated customer (the only pretend part)** — `sb-wg-server` (their
@@ -91,7 +91,7 @@ Three **networks** (these are not containers and never appear in `docker ps`):
 |---|---|---|
 | `sb_customer_lan` | the customer's LAN, `internal=true` | `sb-wg-server`, `sb-camera-01` — **never a session** |
 | `sb_transit` | the public internet | `sb-wg-server`, each session's `vpn` |
-| `sb_sessions` | our internal network | Traefik, broker, authentik, each session's `vpn` |
+| `sb_sessions` | our internal network | Traefik, session manager, authentik, each session's `vpn` |
 
 ### The one idea that matters
 
@@ -117,7 +117,7 @@ points at the port the browser listens on inside it.
 
 ### Device names, not hosts files
 
-Each customer has a JSON registry in `broker/devices/<id>.json` (static IPs).
+Each customer has a JSON registry in `session-manager/devices/<id>.json` (static IPs).
 At session start it is rendered into a hosts file that a **dnsmasq resolver
 inside the session** serves, and the browser's `/etc/resolv.conf` is mounted
 pointing at `127.0.0.1`. The engineer types `camera-01.acme.internal`. No
@@ -142,13 +142,13 @@ internal-only name breaks the browser; a name the container cannot resolve
 gives HTTP 400. The fix here is one browser-facing URL plus an `extra_hosts`
 entry mapping it to `host-gateway`.
 
-**Bind-mount paths are resolved by the Docker daemon, on the host.** The broker
+**Bind-mount paths are resolved by the Docker daemon, on the host.** The session manager
 runs in a container where the project is at `/project`, but it starts sessions
 through the Docker socket — so passing `$(pwd)` mounted a path that exists only
-inside the broker. The session came up with empty files: the resolver exited
+inside the session manager. The session came up with empty files: the resolver exited
 with *"no device file mounted"*, the browser never started because it depends on
 it, and Traefik answered **502**. Hence `HOST_PROJECT_DIR` in `.env`. Anything
-mounted into a session must use a host path, not a broker path.
+mounted into a session must use a host path, not a session manager path.
 
 **A running session does not pick up changed compose definitions.** Recreate it.
 A session alive for days is its own smell — that is what the (unbuilt) reaper is
@@ -171,7 +171,7 @@ for.
 in. `forward_single` covers one hostname. `forward_domain` was tried twice —
 under `.localhost` (cookie rejected) and under `sb.test` (cookie fine, outpost
 still 404s for every host) — and the second failure is **unresolved**. The
-better production answer is for the broker to create a provider per session via
+better production answer is for the session manager to create a provider per session via
 authentik's API, which also allows *which engineer may open which customer*.
 
 Until that is fixed, **this lab must not hold a real customer credential.**
@@ -183,7 +183,7 @@ Until that is fixed, **this lab must not hold a real customer credential.**
   customer), `docker-compose.console.yml` (ours), `docker-compose.auth.yml`
   (authentik), `session/docker-compose.session.yml` (the session template).
 - **Never commit** `.env`, `session/conf/*`, `lab/wg-config/*`, or
-  `broker/audit.log` — they hold private keys and secrets. Already gitignored;
+  `session-manager/audit.log` — they hold private keys and secrets. Already gitignored;
   it was got wrong once and fixed in a follow-up commit.
 - Comments explain *why*, especially where a plausible alternative fails. Most
   comments in this repo exist because something was tried and did not work.

@@ -2,7 +2,7 @@
 
 This lab runs the whole support-session idea on your laptop, with **nothing from
 the company touched**. It simulates a customer site (a camera on a private
-network behind a VPN endpoint) and runs the real thing on our side (a broker
+network behind a VPN endpoint) and runs the real thing on our side (a session manager
 that starts disposable sessions, and Traefik in front of them).
 
 Everything below is a command you can run and a result you can look at.
@@ -17,7 +17,7 @@ Everything below is a command you can run and a result you can look at.
 |---|---|
 | `sb-camera-01` — nginx with a self-signed cert | An Axis camera at a customer |
 | `sb-wg-server` — WireGuard endpoint | The customer's firewall, or a box we place |
-| `sb-broker` — the console with the buttons | The same thing, on our server |
+| `sb-session-manager` — the console with the buttons | The same thing, on our server |
 | `sb-traefik` | The same thing, on our server |
 | `sb-ak-*` — authentik, Postgres, Redis | The same thing, on our server |
 | `sb-<customer>-vpn` + `-resolver` + `-browser` | Exactly the same, unchanged |
@@ -29,7 +29,7 @@ never appear in `docker ps`):
 |---|---|---|
 | `sb_customer_lan` | The customer's private LAN (`internal=true`) | `sb-wg-server`, `sb-camera-01` — **never a session** |
 | `sb_transit` | The public internet between us and them | `sb-wg-server`, each session's `vpn` |
-| `sb_sessions` | Our own internal network | Traefik, broker, authentik, each session's `vpn` |
+| `sb_sessions` | Our own internal network | Traefik, session manager, authentik, each session's `vpn` |
 
 Check it yourself:
 
@@ -63,7 +63,7 @@ cp .env.example .env             # first time only, then fill in the secrets
 > unknown-TLD rule, the cookie is accepted, and the login completes. The cost
 > is one line in `/etc/hosts`.
 
-That starts Traefik, the broker, the fake customer network, and generates one
+That starts Traefik, the session manager, the fake customer network, and generates one
 WireGuard identity per customer. Takes a minute the first time.
 
 Now open the console:
@@ -155,7 +155,7 @@ docker inspect sb-customer2-vpn -f '{{range $k,$v := .NetworkSettings.Networks}}
 ### Two customers cannot see each other
 
 ```bash
-docker exec sb-broker true 2>/dev/null   # start customer7 from the console too
+docker exec sb-session-manager true 2>/dev/null   # start customer7 from the console too
 docker exec sb-customer2-vpn ping -c1 -W2 10.13.13.3   # customer7's tunnel address
 # → fails
 ```
@@ -173,7 +173,7 @@ them are gone.
 ### Every action is on the record
 
 ```bash
-cat broker/audit.log
+cat session-manager/audit.log
 ```
 
 ```
@@ -224,7 +224,7 @@ must be fixed before anything real.** The cause is specific and worth knowing:
   cookie domain is valid but the outpost still answers 404 for every host. That
   second failure is **unresolved** — do not assume switching domains fixes it.
 
-The alternative, which is better in production, is for the broker to create a
+The alternative, which is better in production, is for the session manager to create a
 provider per session through authentik's API when it starts one. That also lets
 you say *which engineer may open which customer*, rather than only *who may log
 in at all*.
@@ -250,7 +250,7 @@ appear and disappear as sessions start and stop.
 
 1. Add the id to `PEERS` in `docker-compose.lab.yml`
 2. `docker compose -f docker-compose.lab.yml up -d --force-recreate wg-server`
-3. Add an entry to `broker/customers.yml`
+3. Add an entry to `session-manager/customers.yml`
 4. It appears in the console
 
 ---
@@ -283,13 +283,13 @@ terminates, and what sits in front of the console.
 
 - The session pair (`vpn` + `browser`) and `network_mode: service:vpn`
 - Traefik labels on the VPN container
-- The broker's start/stop/audit logic
+- The session manager's start/stop/audit logic
 - One credential per customer
 
 ### What must change before a real customer
 
 **1. The credentials come from Infisical, not a file.**
-The lab writes `session/conf/<customer>.conf` to disk. In production the broker
+The lab writes `session/conf/<customer>.conf` to disk. In production the session manager
 fetches that customer's config from Infisical when the session starts, passes it
 in memory, and it dies with the container. Nothing lands on disk.
 
@@ -297,7 +297,7 @@ in memory, and it dies with the container. Nothing lands on disk.
 Authentik now guards the console (see §4b) and MFA can be enrolled there. Two
 things remain: **session URLs are still unauthenticated** (§4b, "Known gap"),
 and the bootstrap admin password in `.env` must be replaced by real accounts.
-**The broker is the most security-critical thing you will run** — it can reach
+**The session manager is the most security-critical thing you will run** — it can reach
 every customer network you serve.
 
 **3. A reaper.**
@@ -332,7 +332,7 @@ support tool.
 ### A realistic rollout
 
 1. Run this lab until the workflow feels right.
-2. Put Authentik in front of the broker. Do not skip ahead.
+2. Put Authentik in front of the session manager. Do not skip ahead.
 3. Move credentials into Infisical.
 4. Add the reaper and keep the audit log somewhere you would actually read.
 5. Pilot with **one** friendly customer over WireGuard — ideally a site that
@@ -345,12 +345,12 @@ support tool.
 
 ```
 session-broker/
-├── docker-compose.console.yml   # OUR side: Traefik + broker
+├── docker-compose.console.yml   # OUR side: Traefik + session manager
 ├── docker-compose.lab.yml       # the fake customer: VPN endpoint + camera
 ├── session/
 │   ├── docker-compose.session.yml   # the session pair — read this one
 │   └── vpn/                         # WireGuard client image
-├── broker/
+├── session-manager/
 │   ├── app.py                   # the console: list, start, stop, audit
 │   └── customers.yml            # the customer register
 ├── lab/camera/                  # the fake camera

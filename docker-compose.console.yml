@@ -24,27 +24,27 @@ services:
     networks: [sessions]
     restart: unless-stopped
 
-  broker:
-    build: ./broker
-    container_name: sb-broker
+  session-manager:
+    build: ./session-manager
+    container_name: sb-session-manager
     environment:
       PROJECT_DIR: /project
       HOST_PROJECT_DIR: ${HOST_PROJECT_DIR:?set HOST_PROJECT_DIR in .env}
       LAB_DOMAIN: ${LAB_DOMAIN:-sb.test}
       TRAEFIK_HTTP_PORT: ${TRAEFIK_HTTP_PORT:-8088}
     volumes:
-      # The broker's power comes entirely from these two mounts. In production
+      # The session manager's power comes entirely from these two mounts. In production
       # this is the container that needs the most protecting.
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/project
     labels:
       - traefik.enable=true
       - traefik.docker.network=sb_sessions
-      - traefik.http.routers.broker.rule=Host(`console.${LAB_DOMAIN:-sb.test}`)
-      - traefik.http.routers.broker.entrypoints=web
+      - traefik.http.routers.session-manager.rule=Host(`console.${LAB_DOMAIN:-sb.test}`)
+      - traefik.http.routers.session-manager.entrypoints=web
       # Every request to the console is checked by authentik first.
-      - traefik.http.routers.broker.middlewares=ak-auth@docker
-      - traefik.http.services.broker.loadbalancer.server.port=8000
+      - traefik.http.routers.session-manager.middlewares=ak-auth@docker
+      - traefik.http.services.session-manager.loadbalancer.server.port=8000
     networks: [sessions]
     restart: unless-stopped
 

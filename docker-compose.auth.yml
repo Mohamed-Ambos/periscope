@@ -1,9 +1,9 @@
 # ---------------------------------------------------------------------------
-# Authentik — the login and MFA in front of the broker.
+# Authentik — the login and MFA in front of the session manager.
 #
 # Nothing reaches the console without passing through here. Traefik asks
 # Authentik about every request (forward auth); an unauthenticated one is
-# redirected to the login page instead of reaching the broker.
+# redirected to the login page instead of reaching the session manager.
 # ---------------------------------------------------------------------------
 name: sb-auth
 

@@ -1,4 +1,4 @@
-"""Session broker — starts and destroys one disposable session per customer.
+"""Session session manager — starts and destroys one disposable session per customer.
 
 Deliberately thin. Its only jobs are: know the customers, call Docker, and
 record what happened. Everything security-relevant (who may click, which
@@ -16,13 +16,13 @@ from fastapi.responses import HTMLResponse, JSONResponse
 PROJECT = os.environ.get("PROJECT_DIR", "/project")
 DOMAIN = os.environ.get("LAB_DOMAIN", "localhost")
 PORT = os.environ.get("TRAEFIK_HTTP_PORT", "8088")
-AUDIT = os.path.join(PROJECT, "broker", "audit.log")
+AUDIT = os.path.join(PROJECT, "session-manager", "audit.log")
 
-app = FastAPI(title="Session Broker")
+app = FastAPI(title="Session Manager")
 
 
 def customers():
-    with open(os.path.join(PROJECT, "broker", "customers.yml")) as fh:
+    with open(os.path.join(PROJECT, "session-manager", "customers.yml")) as fh:
         return yaml.safe_load(fh)["customers"]
 
 
@@ -95,7 +95,7 @@ def index():
             f'{c["devices"]} devices · {c["vpn"]}</span></td>'
             f'<td>{state}</td><td class="act">{btn}</td></tr>')
     return f"""<!doctype html><html><head><meta charset="utf-8">
-<title>Session Broker</title><style>
+<title>Session Manager</title><style>
 body{{font:15px/1.6 system-ui,sans-serif;background:#0f1519;color:#e2e9ef;margin:0;padding:40px 24px}}
 .wrap{{max-width:760px;margin:0 auto}}
 h1{{font-size:22px;margin:0 0 4px}} .lede{{color:#8496a4;margin:0 0 28px;font-size:14px}}
@@ -109,7 +109,7 @@ button,a.open{{font:inherit;font-size:13.5px;padding:7px 14px;border-radius:6px;
 button.stop{{border-color:#7a4a2a;background:#3a2416;color:#f0d6c2;margin-right:8px}}
 #msg{{margin-top:18px;color:#8496a4;font-size:13px;min-height:20px}}
 </style></head><body><div class="wrap">
-<h1>Session Broker</h1>
+<h1>Session Manager</h1>
 <p class="lede">One disposable session per customer. Nothing is connected until you connect it.</p>
 <table>{''.join(rows)}</table>
 <div id="msg"></div>
