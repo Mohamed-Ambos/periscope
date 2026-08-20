@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>periscope</title>
+<style>
+:root{
+  --bg:#0A0F14; --panel:#111A22; --panel-2:#16212B; --raise:#1B2833;
+  --line:#22303C; --line-2:#2C3E4D;
+  --ink:#DDE8F0; --ink-2:#8CA3B6; --ink-3:#5C7387;
+  --live:#35D6A5; --live-bg:rgba(53,214,165,.10); --live-line:rgba(53,214,165,.35);
+  --accent:#4FC3E8; --accent-bg:rgba(79,195,232,.10);
+  --warn:#E0A24B; --danger:#E0715B; --danger-bg:rgba(224,113,91,.10);
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.55 var(--sans); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:940px; margin:0 auto; padding:26px 22px 70px}
+
+/* ---------- header ---------- */
+header{display:flex; align-items:center; gap:13px; padding-bottom:18px; border-bottom:1px solid var(--line)}
+.mark{width:26px; height:26px; flex:0 0 26px; color:var(--accent)}
+.brand{font-size:19px; font-weight:600; letter-spacing:-.015em}
+.brand span{color:var(--ink-3); font-weight:400}
+.spacer{flex:1}
+.env{
+  font:11px/1 var(--mono); letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); border:1px solid var(--line-2); border-radius:3px; padding:5px 8px;
+}
+
+/* ---------- the one line that matters ---------- */
+.state{
+  display:flex; align-items:center; gap:13px; margin:22px 0 8px;
+  padding:15px 17px; border:1px solid var(--line); border-radius:5px; background:var(--panel);
+}
+.state.up{border-color:var(--live-line); background:var(--live-bg)}
+.state .dot{width:9px; height:9px; border-radius:50%; background:var(--ink-3); flex:0 0 9px}
+.state.up .dot{background:var(--live); box-shadow:0 0 0 0 var(--live-line); animation:pulse 2.4s infinite}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(53,214,165,.45)}
+  70%{box-shadow:0 0 0 9px rgba(53,214,165,0)}
+  100%{box-shadow:0 0 0 0 rgba(53,214,165,0)}
+}
+.state .txt{font-size:14.5px; font-weight:500}
+.state.up .txt{color:var(--live)}
+.state .sub{color:var(--ink-3); font-size:13px; font-weight:400}
+
+/* ---------- toolbar ---------- */
+.bar{display:flex; align-items:center; gap:10px; margin:22px 0 10px}
+.bar h2{font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin:0; font-weight:500; font-family:var(--mono)}
+#filter{
+  margin-left:auto; width:190px; background:var(--panel); color:var(--ink);
+  border:1px solid var(--line-2); border-radius:4px; padding:7px 10px; font:13px var(--sans);
+}
+#filter::placeholder{color:var(--ink-3)}
+#filter:focus{outline:none; border-color:var(--accent)}
+
+/* ---------- customer rows ---------- */
+.list{display:flex; flex-direction:column; gap:9px}
+.row{
+  display:flex; align-items:center; gap:15px; padding:15px 17px;
+  background:var(--panel); border:1px solid var(--line); border-left:2px solid var(--line-2);
+  border-radius:5px; transition:border-color .15s, background .15s;
+}
+.row.live{border-left-color:var(--live); background:var(--panel-2)}
+.row.busy{opacity:.62}
+.who{min-width:0; flex:1}
+.name{font-weight:600; font-size:15px; letter-spacing:-.005em}
+.meta{color:var(--ink-3); font-size:12.5px; font-family:var(--mono); margin-top:3px}
+.meta b{color:var(--ink-2); font-weight:400}
+.status{
+  font:11.5px/1 var(--mono); letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-3); white-space:nowrap; min-width:104px; text-align:right;
+}
+.row.live .status{color:var(--live)}
+.age{display:block; color:var(--ink-3); text-transform:none; letter-spacing:0; margin-top:5px; font-size:12px}
+.acts{display:flex; gap:8px; white-space:nowrap}
+
+button,a.btn{
+  font:13px/1 var(--sans); font-weight:500; padding:9px 15px; border-radius:4px;
+  border:1px solid var(--line-2); background:var(--raise); color:var(--ink);
+  cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:7px;
+  transition:background .13s, border-color .13s, color .13s;
+}
+button:hover,a.btn:hover{background:#24333F; border-color:#3A4E60}
+button:focus-visible,a.btn:focus-visible,#filter:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+button:disabled{opacity:.5; cursor:not-allowed}
+.primary{background:var(--accent-bg); border-color:rgba(79,195,232,.45); color:var(--accent)}
+.primary:hover{background:rgba(79,195,232,.18); border-color:var(--accent)}
+.danger{color:var(--danger); border-color:rgba(224,113,91,.34)}
+.danger:hover{background:var(--danger-bg); border-color:var(--danger)}
+.danger.armed{background:var(--danger-bg); border-color:var(--danger)}
+
+.spin{width:12px; height:12px; border:2px solid currentColor; border-right-color:transparent;
+  border-radius:50%; animation:spin .7s linear infinite; display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- activity ---------- */
+.feed{margin-top:34px; border-top:1px solid var(--line); padding-top:18px}
+.feed h2{font:12px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin:0 0 13px; font-weight:500}
+.ev{display:flex; gap:13px; align-items:baseline; padding:6px 0; font-family:var(--mono); font-size:12.5px; border-bottom:1px solid rgba(34,48,60,.5)}
+.ev:last-child{border-bottom:none}
+.ev .t{color:var(--ink-3); flex:0 0 132px}
+.ev .a{flex:0 0 54px; font-weight:500}
+.ev .a.start{color:var(--live)} .ev .a.stop{color:var(--ink-2)}
+.ev .c{color:var(--ink-2); flex:1}
+.ev .r.fail{color:var(--danger)}
+.empty{color:var(--ink-3); font-size:13.5px; padding:14px 0}
+
+/* ---------- toast ---------- */
+#toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,14px);
+  background:var(--raise); border:1px solid var(--line-2); border-radius:5px;
+  padding:11px 17px; font-size:13.5px; max-width:520px;
+  opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  box-shadow:0 8px 26px rgba(0,0,0,.45);
+}
+#toast.show{opacity:1; transform:translate(-50%,0)}
+#toast.err{border-color:var(--danger); color:var(--danger)}
+footer{margin-top:30px; color:var(--ink-3); font-size:12px; font-family:var(--mono)}
+kbd{font:11px var(--mono); border:1px solid var(--line-2); border-bottom-width:2px;
+  border-radius:3px; padding:1px 5px; color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+@media (max-width:620px){
+  .row{flex-wrap:wrap} .status{text-align:left; min-width:0} .acts{width:100%}
+  #filter{width:130px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9 21V7a3 3 0 0 1 3-3h3"/>
+      <path d="M15 4h4"/>
+      <circle cx="19.5" cy="4" r="1.6"/>
+      <path d="M6 21h6"/>
+    </svg>
+    <div class="brand">periscope<span> · support access</span></div>
+    <div class="spacer"></div>
+    <div class="env" id="env">lab</div>
+  </header>
+
+  <div class="state" id="state">
+    <span class="dot"></span>
+    <span class="txt" id="stateTxt">Checking…</span>
+    <span class="sub" id="stateSub"></span>
+  </div>
+
+  <div class="bar">
+    <h2>Customers</h2>
+    <input id="filter" type="search" placeholder="Filter…  /" aria-label="Filter customers">
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <div class="feed">
+    <h2>Activity</h2>
+    <div id="feed"><div class="empty">Nothing recorded yet.</div></div>
+  </div>
+
+  <footer>Sessions are destroyed on Stop. Press <kbd>/</kbd> to filter, <kbd>r</kbd> to refresh.</footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $  = s => document.querySelector(s);
+let STATE = null, busy = new Set(), armed = null, filterText = "";
+
+/* ---------- helpers ---------- */
+function ago(iso){
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime())/1000);
+  if (s < 60) return Math.floor(s) + "s";
+  const m = Math.floor(s/60), h = Math.floor(m/60);
+  return h ? h + "h " + (m%60) + "m" : m + "m " + Math.floor(s%60) + "s";
+}
+function clock(iso){
+  const d = new Date(iso);
+  return isNaN(d) ? iso : d.toLocaleString([], {month:"short", day:"2-digit",
+    hour:"2-digit", minute:"2-digit", second:"2-digit"});
+}
+function toast(msg, isErr){
+  const t = $("#toast");
+  t.textContent = msg; t.classList.toggle("err", !!isErr); t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), isErr ? 6000 : 2600);
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- render ---------- */
+function render(){
+  if (!STATE) return;
+  const live = STATE.live || {}, n = Object.keys(live).length;
+
+  const st = $("#state");
+  st.classList.toggle("up", n > 0);
+  $("#stateTxt").textContent = n === 0
+    ? "Periscope down"
+    : n + (n === 1 ? " session live" : " sessions live");
+  $("#stateSub").textContent = n === 0
+    ? "No customer network is reachable from here."
+    : "Access is on. Stop the session when the call ends.";
+
+  const q = filterText.toLowerCase();
+  const rows = (STATE.customers || []).filter(c =>
+    !q || (c.name + " " + c.site + " " + c.id).toLowerCase().includes(q));
+
+  $("#list").innerHTML = rows.length ? rows.map(c => {
+    const on = !!live[c.id], isBusy = busy.has(c.id);
+    const url = "http://" + c.id + "." + STATE.domain + ":" + STATE.port + "/";
+    const acts = isBusy
+      ? '<button disabled><span class="spin"></span>Working…</button>'
+      : on
+        ? '<button class="danger' + (armed === c.id ? " armed" : "") + '" data-stop="' + c.id + '">'
+          + (armed === c.id ? "Confirm stop" : "Stop") + '</button>'
+          + '<a class="btn primary" href="' + url + '" target="_blank" rel="noopener">Open ↗</a>'
+        : '<button class="primary" data-start="' + c.id + '">Connect</button>';
+    return '<div class="row' + (on ? " live" : "") + (isBusy ? " busy" : "") + '">'
+      + '<div class="who"><div class="name">' + esc(c.name) + '</div>'
+      + '<div class="meta">' + esc(c.site) + ' · <b>' + c.devices + ' devices</b> · ' + esc(c.vpn) + '</div></div>'
+      + '<div class="status">' + (on ? "● live" : "○ stopped")
+      + (on ? '<span class="age" data-since="' + live[c.id].started + '">up ' + ago(live[c.id].started) + '</span>' : "")
+      + '</div><div class="acts">' + acts + '</div></div>';
+  }).join("") : '<div class="empty">No customer matches “' + esc(filterText) + '”.</div>';
+
+  $("#feed").innerHTML = (STATE.audit || []).length
+    ? STATE.audit.map(e =>
+        '<div class="ev"><span class="t">' + esc(clock(e.at)) + '</span>'
+        + '<span class="a ' + esc(e.action) + '">' + esc(e.action) + '</span>'
+        + '<span class="c">' + esc(e.customer) + '</span>'
+        + '<span class="r' + (e.result === "ok" ? "" : " fail") + '">' + esc(e.result) + '</span></div>').join("")
+    : '<div class="empty">Nothing recorded yet.</div>';
+}
+
+function tick(){
+  document.querySelectorAll(".age[data-since]").forEach(el => {
+    el.textContent = "up " + ago(el.dataset.since);
+  });
+}
+
+/* ---------- data ---------- */
+async function refresh(){
+  try{
+    const r = await fetch("/api/state", {cache:"no-store"});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    STATE = await r.json();
+    render();
+  }catch(e){ toast("Cannot reach the session manager — " + e.message, true); }
+}
+
+async function act(id, method){
+  busy.add(id); armed = null; render();
+  const verb = method === "POST" ? "Starting" : "Stopping";
+  toast(verb + " " + id + "…");
+  try{
+    const r = await fetch("/api/sessions/" + encodeURIComponent(id), {method});
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.detail || ("HTTP " + r.status));
+    toast(method === "POST" ? "Session live for " + id + "." : "Session for " + id + " destroyed.");
+  }catch(e){
+    toast((method === "POST" ? "Could not start " : "Could not stop ") + id + " — " + e.message, true);
+  }finally{
+    busy.delete(id); await refresh();
+  }
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const start = e.target.closest("[data-start]"), stop = e.target.closest("[data-stop]");
+  if (start) return act(start.dataset.start, "POST");
+  if (stop){
+    // Two-step, because stopping mid-call cuts an engineer off mid-sentence.
+    const id = stop.dataset.stop;
+    if (armed !== id){ armed = id; render(); setTimeout(() => { if (armed === id){ armed = null; render(); } }, 4000); return; }
+    return act(id, "DELETE");
+  }
+  if (armed){ armed = null; render(); }
+});
+$("#filter").addEventListener("input", e => { filterText = e.target.value; render(); });
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT"){ if (e.key === "Escape"){ e.target.value=""; filterText=""; render(); e.target.blur(); } return; }
+  if (e.key === "/"){ e.preventDefault(); $("#filter").focus(); }
+  if (e.key === "r"){ refresh(); toast("Refreshed."); }
+});
+
+refresh();
+setInterval(refresh, 4000);
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

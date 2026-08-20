@@ -5,6 +5,7 @@ record what happened. Everything security-relevant (who may click, which
 credentials exist) belongs outside it.
 """
 import os
+import json
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -43,20 +44,43 @@ def run(script, cid):
 
 
 def live():
+    """Which sessions exist right now. Docker is the source of truth."""
+    names = subprocess.run(
+        ["docker", "ps", "--filter", "name=-vpn", "--format", "{{.Names}}"],
+        capture_output=True, text=True,
+    ).stdout.split()
+    names = [n for n in names if n.startswith(PREFIX) and n.endswith(SUFFIX)]
+    if not names:
+        return {}
     out = subprocess.run(
-        ["docker", "ps", "--filter", "name=-vpn", "--format", "{{.Names}}\t{{.Status}}"],
+        ["docker", "inspect", "-f", "{{.Name}}|{{.State.StartedAt}}", *names],
         capture_output=True, text=True,
     ).stdout
     sessions = {}
     for line in out.strip().splitlines():
-        if not line.strip():
-            continue
-        name, _, status = line.partition("\t")
+        name, _, started = line.strip().lstrip("/").partition("|")
         if name.startswith(PREFIX) and name.endswith(SUFFIX):
             # Derive the id by name, not by offset: a hardcoded slice silently
             # returns the wrong key the moment the prefix changes length.
-            sessions[name.removeprefix(PREFIX).removesuffix(SUFFIX)] = status
+            cid = name.removeprefix(PREFIX).removesuffix(SUFFIX)
+            sessions[cid] = {"started": started}
     return sessions
+
+
+def audit_tail(n=14):
+    """Recent activity, newest first. Evidence outlives the session itself."""
+    try:
+        with open(AUDIT) as fh:
+            lines = fh.read().strip().splitlines()[-n:]
+    except FileNotFoundError:
+        return []
+    events = []
+    for line in reversed(lines):
+        parts = line.split("\t")
+        if len(parts) >= 4:
+            events.append({"at": parts[0], "action": parts[1],
+                           "customer": parts[2], "result": parts[3]})
+    return events
 
 
 @app.get("/api/sessions")
@@ -82,48 +106,21 @@ def api_stop(cid: str):
     return {"ok": r.returncode == 0}
 
 
+@app.get("/api/state")
+def api_state():
+    """Everything the console draws, in one call. No server-side rendering."""
+    return JSONResponse({
+        "customers": customers(),
+        "live": live(),
+        "audit": audit_tail(),
+        "domain": DOMAIN,
+        "port": PORT,
+    })
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
-    running = live()
-    rows = []
-    for c in customers():
-        on = c["id"] in running
-        state = ('<span class="live">● live</span>' if on
-                 else '<span class="off">○ stopped</span>')
-        btn = (f'<button class="stop" onclick="act(\'{c["id"]}\',\'DELETE\')">Stop</button>'
-               f'<a class="open" href="http://{c["id"]}.{DOMAIN}:{PORT}/" target="_blank">Open</a>'
-               if on else
-               f'<button onclick="act(\'{c["id"]}\',\'POST\')">Connect</button>')
-        rows.append(
-            f'<tr><td><strong>{c["name"]}</strong><br><span class="sub">{c["site"]} · '
-            f'{c["devices"]} devices · {c["vpn"]}</span></td>'
-            f'<td>{state}</td><td class="act">{btn}</td></tr>')
-    return f"""<!doctype html><html><head><meta charset="utf-8">
-<title>Session Manager</title><style>
-body{{font:15px/1.6 system-ui,sans-serif;background:#0f1519;color:#e2e9ef;margin:0;padding:40px 24px}}
-.wrap{{max-width:760px;margin:0 auto}}
-h1{{font-size:22px;margin:0 0 4px}} .lede{{color:#8496a4;margin:0 0 28px;font-size:14px}}
-table{{width:100%;border-collapse:collapse}}
-td{{padding:14px 10px;border-bottom:1px solid #22303a;vertical-align:middle}}
-.sub{{color:#7e919f;font-size:12.5px}}
-.live{{color:#4cbb80;font-weight:600}} .off{{color:#6d7f8c}}
-.act{{text-align:right;white-space:nowrap}}
-button,a.open{{font:inherit;font-size:13.5px;padding:7px 14px;border-radius:6px;cursor:pointer;
-  border:1px solid #2f6f9c;background:#173044;color:#cfe6f5;text-decoration:none;display:inline-block}}
-button.stop{{border-color:#7a4a2a;background:#3a2416;color:#f0d6c2;margin-right:8px}}
-#msg{{margin-top:18px;color:#8496a4;font-size:13px;min-height:20px}}
-</style></head><body><div class="wrap">
-<h1>Session Manager</h1>
-<p class="lede">One disposable session per customer. Nothing is connected until you connect it.</p>
-<table>{''.join(rows)}</table>
-<div id="msg"></div>
-<script>
-async function act(id, method) {{
-  document.getElementById('msg').textContent =
-    (method === 'POST' ? 'Starting ' : 'Stopping ') + id + '…';
-  const r = await fetch('/api/sessions/' + id, {{method}});
-  const j = await r.json().catch(() => ({{}}));
-  document.getElementById('msg').textContent = r.ok ? 'Done.' : ('Failed: ' + (j.detail || r.status));
-  setTimeout(() => location.reload(), 900);
-}}
-</script></div></body></html>"""
+    # Read from the project mount rather than the image, so the console can be
+    # restyled without rebuilding the container.
+    with open(os.path.join(PROJECT, "session-manager", "console.html")) as fh:
+        return fh.read()
