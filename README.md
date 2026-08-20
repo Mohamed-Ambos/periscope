@@ -275,6 +275,8 @@ exact thing this design exists to abolish.
   — illustrated: every container and what it stands for in real life.
 - **[LAB-GUIDE.md](LAB-GUIDE.md)** — what to click, and the commands that prove each
   isolation claim.
+- **[docs/risks-and-mitigations.md](docs/risks-and-mitigations.md)** — everything known
+  to be wrong, likely to go wrong, or waiting to go wrong, and what to do about each.
 
 ## Scope
 
